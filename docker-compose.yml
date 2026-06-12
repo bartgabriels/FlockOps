@@ -1,0 +1,35 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: schapentracker
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: schapentracker
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - schapentracker_net
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgres://schapentracker:changeme@db:5432/schapentracker
+      PORT: 4000
+    ports:
+      - "4000:4000"
+    networks:
+      - schapentracker_net
+
+volumes:
+  db_data:
+
+networks:
+  schapentracker_net:
+    driver: bridge

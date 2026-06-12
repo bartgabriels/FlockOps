@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Schapentracker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="brand">
+        <span class="brand-title">SCHAPENTRACKER</span>
+        <span class="badge">Gratis</span>
+      </div>
+      <button class="chip"><span class="chip-icon">📍</span> Zandvlietse Dorpstraat</button>
+    </div>
+    <div class="topbar-right">
+      <button id="toggle-paddock-panel" class="button-secondary">Weiden beheren</button>
+      <button id="toggle-sheep-panel" class="button-primary">Schaap toevoegen</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="summary-row">
+      <article class="stat-card stat-green">
+        <span class="stat-title">Weiden</span>
+        <strong id="stat-paddocks">0</strong>
+      </article>
+      <article class="stat-card stat-blue">
+        <span class="stat-title">Stukken</span>
+        <strong id="stat-sections">0</strong>
+      </article>
+      <article class="stat-card stat-purple">
+        <span class="stat-title">Schapen</span>
+        <strong id="stat-sheep">0</strong>
+      </article>
+      <article class="stat-card stat-orange">
+        <span class="stat-title">Onderhoud nodig</span>
+        <strong id="stat-maintenance">0</strong>
+      </article>
+      <article class="stat-card stat-red">
+        <span class="stat-title">Top wei</span>
+        <strong id="stat-top-paddock">-</strong>
+      </article>
+    </section>
+
+    <section class="panel distribution-panel">
+      <div class="panel-header">
+        <span>Verdeling schapen per wei</span>
+      </div>
+      <div id="distribution-bar" class="distribution-bar"></div>
+    </section>
+
+    <section class="panel paddock-overview">
+      <div class="panel-header">
+        <span>Paddocks</span>
+      </div>
+      <div id="paddock-list" class="paddock-grid"></div>
+    </section>
+
+    <section class="panel forms-panel">
+      <div class="panel-grid">
+        <div>
+          <h2>Weide toevoegen</h2>
+          <form id="paddock-form" class="form-grid">
+            <input type="text" id="paddock-name" placeholder="Naam weide" required>
+            <input type="text" id="paddock-size" placeholder="Oppervlakte (ha)">
+            <button type="submit" class="button-primary">Weide toevoegen</button>
+          </form>
+        </div>
+
+        <div>
+          <h2>Schaap toevoegen</h2>
+          <form id="sheep-form" class="form-grid">
+            <input type="text" id="sheep-tag" placeholder="Schapetag" required>
+            <input type="text" id="sheep-breed" placeholder="Ras">
+            <input type="number" id="sheep-weight" placeholder="Gewicht (kg)" min="0">
+            <select id="sheep-paddock"></select>
+            <button type="submit" class="button-primary">Schaap toevoegen</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel move-panel">
+      <h2>Verplaats schaap</h2>
+      <form id="move-form" class="form-grid">
+        <select id="move-sheep"></select>
+        <select id="move-paddock"></select>
+        <button type="submit" class="button-primary">Verplaats</button>
+      </form>
+    </section>
+
+    <section class="panel log-panel">
+      <h2>Bewegingslog</h2>
+      <div class="table-wrapper">
+        <table id="movement-table">
+          <thead>
+            <tr>
+              <th>Tijd</th>
+              <th>Tag</th>
+              <th>Van</th>
+              <th>Naar</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Data wordt lokaal opgeslagen in de browser.</p>
+  </footer>
+  <script src="app.js"></script>
+</body>
+</html>
