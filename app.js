@@ -116,7 +116,7 @@ function renderPaddock(p){
         const sheepCount = sheepNames.length
         const status = z.emptySince ? `Leeg sinds ${daysSince(z.emptySince)} dagen` : `Bezet${sheepCount ? ` (${sheepCount})` : ''}`
         const sheepLabel = sheepCount ? sheepNames.map(name => `${sheepIcon()}${name}`).join(' ') : 'Geen schaap'
-        return `<div class="zone-item"><div><strong>${z.name}</strong><small>${status}</small></div><div class="zone-bottom">${sheepLabel}</div></div>`
+        return `<div class="zone-item" data-paddock-id="${p.id}" data-zone-id="${z.id}"><button type="button" class="zone-delete-button" data-paddock-id="${p.id}" data-zone-id="${z.id}" aria-label="Zone verwijderen">−</button><div><strong>${z.name}</strong><small>${status}</small></div><div class="zone-bottom">${sheepLabel}</div></div>`
       }).join('')}
       <button type="button" class="zone-item add-zone-button" data-paddock-id="${p.id}" aria-label="Zone toevoegen">
         <span class="add-zone-icon">+</span>
@@ -314,6 +314,22 @@ document.getElementById('sheep-list')?.addEventListener('click', e => {
 })
 
 document.getElementById('paddock-list').addEventListener('click', e => {
+  const deleteZoneButton = e.target.closest('.zone-delete-button')
+  if(deleteZoneButton){
+    const paddockId = deleteZoneButton.dataset.paddockId || deleteZoneButton.dataset.paddockId
+    const zoneId = deleteZoneButton.dataset.zoneId
+    const paddock = getPaddock(paddockId)
+    if(!paddock || !zoneId) return
+    paddock.zones = paddock.zones.filter(z => z.id !== zoneId)
+    state.sheep.forEach(s => {
+      if(s.paddockId === paddockId && s.zoneId === zoneId) {
+        s.zoneId = null
+      }
+    })
+    save(); render()
+    return
+  }
+
   const zoneButton = e.target.closest('.add-zone-button')
   if(zoneButton){
     const paddockId = zoneButton.dataset.paddock-id || zoneButton.dataset.paddockId

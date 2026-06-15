@@ -66,8 +66,7 @@ input,select,button,textarea{
   cursor:pointer;
 }
 
-button.section-button,
-button.add-zone-button{
+button.section-button{
   background:#effbf2;
   color:#1f4332;
   border:1px solid #cde6d3;
@@ -78,9 +77,16 @@ button.add-zone-button{
   min-width:fit-content;
 }
 
-button.section-button:hover,
-button.add-zone-button:hover{
+button.section-button:hover{
   background:#e3f6e5;
+}
+
+button.add-zone-button:hover {
+  background-color:transparent;
+}
+
+.zone-list .add-zone-button:hover {
+  background-color:transparent;
 }
 
 .section-header{
@@ -145,6 +151,7 @@ button.add-zone-button:hover{
 
 .zone-item,
 .zone-list .add-zone-button{
+  position:relative;
   background:#f4f8f4 url('gras.png') no-repeat bottom center;
   background-size:cover;
   border-radius:8px;
@@ -159,9 +166,45 @@ button.add-zone-button:hover{
   font-size:0.75rem;
 }
 
+.zone-item .zone-delete-button{
+  position:absolute;
+  top:8px;
+  right:8px;
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  border:none;
+  background:rgba(255,255,255,0.85);
+  color:#1f4332;
+  font-size:1.25rem;
+  line-height:1;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:background 0.2s ease;
+}
+
+.zone-item .zone-delete-button:hover{
+  background:rgba(255,255,255,1);
+}
+
+.zone-list .add-zone-button::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:rgba(46, 125, 50, 0);
+  transition:background 0.2s ease;
+  pointer-events:none;
+  border-radius:8px;
+}
+
+.zone-list .add-zone-button:hover::after{
+  background:rgba(46, 125, 50, 0.2);
+}
+
 .zone-list .add-zone-button{
-  background:#ecf8ef;
-  border:1px dashed #98d5a2;
+  border-style:dashed;
   color:#1f4332;
   justify-content:center;
   align-items:center;
@@ -259,6 +302,7 @@ form button{
 }
 
 .add-sheep-card{
+  position:relative;
   align-items:center;
   justify-content:center;
   background:#ecf8ef url('wol.png') no-repeat center bottom;
@@ -266,6 +310,20 @@ form button{
   border:1px dashed #98d5a2;
   color:#1f4332;
   font-size:2rem;
+}
+
+.add-sheep-card::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:rgba(245, 238, 203, 0);
+  transition:background 0.2s ease;
+  pointer-events:none;
+  border-radius:12px;
+}
+
+.add-sheep-card:hover::after{
+  background:rgba(245, 238, 203, 0.35);
 }
 
 .sheep-card-body{
