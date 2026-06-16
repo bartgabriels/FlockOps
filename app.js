@@ -96,7 +96,11 @@ function sheepNamesList(sheepItems){
 }
 
 function exportData(){
-  const json = JSON.stringify(state, null, 2)
+  const exportState = {
+    ...state,
+    history: Array.isArray(state.history) ? state.history.slice(0, 100) : []
+  }
+  const json = JSON.stringify(exportState, null, 2)
   const blob = new Blob([json], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
@@ -221,8 +225,9 @@ function renderPaddock(p){
         const sheepInZone = state.sheep.filter(s => s.paddockId === p.id && s.zoneId === z.id)
         const sheepCount = sheepInZone.length
         const status = z.emptySince ? `Leeg sinds ${daysSince(z.emptySince)} dagen` : `Bezet${sheepCount ? ` (${sheepCount})` : ''}`
+        const bulkMoveButton = sheepCount > 1 ? `<button type="button" class="zone-bulk-move-button" data-paddock-id="${p.id}" data-zone-id="${z.id}">Verplaats alle dieren</button>` : ''
         const sheepLabel = sheepCount
-          ? `<div class="zone-sheep-list${sheepCount > 6 ? ' is-scrollable' : ''}">${sheepInZone.map(s => `<button type="button" class="zone-sheep-link" data-sheep-id="${s.id}" aria-label="Verplaats ${s.tag}">${sheepIcon()}${s.tag}</button>`).join('')}</div><button type="button" class="zone-bulk-move-button" data-paddock-id="${p.id}" data-zone-id="${z.id}">Verplaats alle dieren</button>`
+          ? `<div class="zone-sheep-list${sheepCount > 6 ? ' is-scrollable' : ''}">${sheepInZone.map(s => `<button type="button" class="zone-sheep-link" data-sheep-id="${s.id}" aria-label="Verplaats ${s.tag}">${sheepIcon()}${s.tag}</button>`).join('')}</div>${bulkMoveButton}`
           : 'Geen schaap'
         const stallZone = isStalZone(p, z)
         const useStallBackground = isStalPaddock(p)
