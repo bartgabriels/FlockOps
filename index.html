@@ -93,6 +93,10 @@
       <form id="paddock-modal-form" class="group-form">
         <input id="paddock-modal-name" placeholder="Naam weide" required>
         <input id="paddock-modal-postcode" placeholder="Postcode (optioneel)">
+        <div class="modal-field">
+          <label id="paddock-modal-notes-label" for="paddock-modal-notes">Notities</label>
+          <textarea id="paddock-modal-notes" placeholder="Algemene notities (optioneel)" rows="3"></textarea>
+        </div>
         <button type="submit" id="paddock-modal-submit">Toevoegen</button>
       </form>
     </div>
@@ -106,6 +110,10 @@
       <form id="paddock-edit-form" class="group-form">
         <input id="paddock-edit-name" placeholder="Naam weide" required>
         <input id="paddock-edit-postcode" placeholder="Postcode (optioneel)">
+        <div class="modal-field">
+          <label id="paddock-edit-notes-label" for="paddock-edit-notes">Notities</label>
+          <textarea id="paddock-edit-notes" placeholder="Algemene notities (optioneel)" rows="3"></textarea>
+        </div>
         <button type="submit" id="paddock-edit-submit">Opslaan</button>
       </form>
     </div>
@@ -150,6 +158,10 @@
         <select id="sheep-zone-modal" disabled>
           <option value="">Kies eerst een weide</option>
         </select>
+        <div class="modal-field">
+          <label id="sheep-modal-notes-label" for="sheep-modal-notes">Notities</label>
+          <textarea id="sheep-modal-notes" placeholder="Algemene notities (optioneel)" rows="3"></textarea>
+        </div>
         <button id="sheep-modal-submit" type="submit">Toevoegen</button>
       </form>
     </div>
@@ -179,6 +191,10 @@
           <label id="sheep-edit-location-label">Locatie</label>
           <div id="sheep-edit-location-display">Veld / Zone</div>
         </div>
+        <div class="modal-field">
+          <label id="sheep-edit-notes-label" for="sheep-edit-notes">Notities</label>
+          <textarea id="sheep-edit-notes" placeholder="Algemene notities (optioneel)" rows="3"></textarea>
+        </div>
         <button id="sheep-edit-modal-submit" type="submit">Opslaan</button>
       </form>
     </div>
@@ -197,6 +213,10 @@
         <input id="zone-modal-name" placeholder="Zone naam" required>
         <input id="zone-modal-area" type="number" min="0" step="0.01" placeholder="Oppervlakte (m2)">
         <input id="zone-modal-perimeter" type="number" min="0" step="0.01" placeholder="Omtrek (m)">
+        <div class="modal-field">
+          <label id="zone-modal-notes-label" for="zone-modal-notes">Notities</label>
+          <textarea id="zone-modal-notes" placeholder="Algemene notities (optioneel)" rows="3"></textarea>
+        </div>
         <button type="submit" id="zone-modal-submit">Toevoegen</button>
       </form>
     </div>
@@ -220,6 +240,10 @@
         <div class="modal-field">
           <label for="zone-edit-perimeter">Omtrek (m)</label>
           <input id="zone-edit-perimeter" type="number" min="0" step="0.01" placeholder="Omtrek">
+        </div>
+        <div class="modal-field">
+          <label id="zone-edit-notes-label" for="zone-edit-notes">Notities</label>
+          <textarea id="zone-edit-notes" placeholder="Algemene notities (optioneel)" rows="3"></textarea>
         </div>
         <button type="submit" id="zone-edit-submit">Opslaan</button>
       </form>

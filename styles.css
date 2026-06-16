@@ -819,26 +819,50 @@ form button{
   font-size:1rem;
 }
 
-.sheep-tag-edit-button{
-  width:auto;
-  max-width:none;
-  border:none;
-  background:none;
-  color:inherit;
-  font:inherit;
-  font-size:1rem;
+.sheep-name-row{
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+
+.sheep-name-label{
+  font-size:0.85rem;
   font-weight:700;
-  padding:0;
-  margin:0;
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+
+.sheep-tag-edit-button{
+  width:24px;
+  height:24px;
+  border-radius:50%;
+  border:none;
+  background:var(--chip-bg);
+  color:var(--chip-text);
+  font-size:0.9rem;
+  line-height:1;
   cursor:pointer;
-  text-align:left;
-  text-decoration:underline;
-  text-underline-offset:2px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+  flex-shrink:0;
+}
+
+.sheep-tag-edit-button:hover{
+  background:#D8EAE2;
 }
 
 .sheep-card-body small{
   color:var(--text-secondary);
-  font-size:0.85rem;
+  font-size:0.72rem;
+}
+
+.sheep-earmark{
+  color:var(--chip-text);
+  font-size:0.72rem;
+  font-weight:600;
 }
 
 .sheep-line{

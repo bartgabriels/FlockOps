@@ -29,6 +29,8 @@ const translations = {
     'sheep.gender.male': 'Ram',
     'sheep.add.pedigreeLabel': 'Stamboom',
     'sheep.add.locationLabel': 'Locatie',
+    'sheep.notes.label': 'Notities',
+    'sheep.notes.placeholder': 'Algemene notities (optioneel)',
     'sheep.add.submit': 'Toevoegen',
     'sheep.edit.title': 'Schaap bewerken',
     'sheep.edit.tagPlaceholder': 'Nieuwe naam',
@@ -73,6 +75,8 @@ const translations = {
     'paddock.add.title': 'Weide toevoegen',
     'paddock.add.nameLabel': 'Naam weide',
     'paddock.add.postcodeLabel': 'Postcode (optioneel)',
+    'paddock.notes.label': 'Notities',
+    'paddock.notes.placeholder': 'Algemene notities (optioneel)',
     'paddock.add.submit': 'Toevoegen',
     'paddock.edit.title': 'Weide bewerken',
     'paddock.edit.nameLabel': 'Naam weide',
@@ -89,6 +93,8 @@ const translations = {
     'zone.add.areaPlaceholder': 'Oppervlakte (m2)',
     'zone.add.perimeterLabel': 'Omtrek (m)',
     'zone.add.perimeterPlaceholder': 'Omtrek (m)',
+    'zone.notes.label': 'Notities',
+    'zone.notes.placeholder': 'Algemene notities (optioneel)',
     'zone.add.submit': 'Toevoegen',
     'zone.edit.title': 'Zone bewerken',
     'zone.edit.paddockLabel': 'Weide',
@@ -149,6 +155,7 @@ const translations = {
     'history.clear': 'Alle gegevens gewist',
     'history.details.name': 'naam {from} -> {name}',
     'history.details.postcode': 'postcode {from} -> {postcode}',
+    'history.details.notesUpdated': 'notities bijgewerkt',
     'history.details.area': 'oppervlakte {from} -> {area}',
     'history.details.perimeter': 'omtrek {from} -> {perimeter}',
     'alert.earmarkDuplicate': 'Dit oorkenmerk is al toegewezen aan een ander schaap.',
@@ -196,6 +203,8 @@ const translations = {
     'sheep.gender.male': 'Ram',
     'sheep.add.pedigreeLabel': 'Pedigree',
     'sheep.add.locationLabel': 'Location',
+    'sheep.notes.label': 'Notes',
+    'sheep.notes.placeholder': 'General notes (optional)',
     'sheep.add.submit': 'Add',
     'sheep.edit.title': 'Edit sheep',
     'sheep.edit.tagPlaceholder': 'New name',
@@ -240,6 +249,8 @@ const translations = {
     'paddock.add.title': 'Add paddock',
     'paddock.add.nameLabel': 'Paddock name',
     'paddock.add.postcodeLabel': 'Postcode (optional)',
+    'paddock.notes.label': 'Notes',
+    'paddock.notes.placeholder': 'General notes (optional)',
     'paddock.add.submit': 'Add',
     'paddock.edit.title': 'Edit paddock',
     'paddock.edit.nameLabel': 'Paddock name',
@@ -256,6 +267,8 @@ const translations = {
     'zone.add.areaPlaceholder': 'Area (m2)',
     'zone.add.perimeterLabel': 'Perimeter (m)',
     'zone.add.perimeterPlaceholder': 'Perimeter (m)',
+    'zone.notes.label': 'Notes',
+    'zone.notes.placeholder': 'General notes (optional)',
     'zone.add.submit': 'Add',
     'zone.edit.title': 'Edit zone',
     'zone.edit.paddockLabel': 'Paddock',
@@ -316,6 +329,7 @@ const translations = {
     'history.clear': 'All data deleted',
     'history.details.name': 'name {from} -> {name}',
     'history.details.postcode': 'postcode {from} -> {postcode}',
+    'history.details.notesUpdated': 'notes updated',
     'history.details.area': 'area {from} -> {area}',
     'history.details.perimeter': 'perimeter {from} -> {perimeter}',
     'alert.earmarkDuplicate': 'This earmark is already assigned to another sheep.',
@@ -366,6 +380,8 @@ const translationsFr = {
   'sheep.gender.male': 'Bélier',
   'sheep.add.pedigreeLabel': 'Pedigree',
   'sheep.add.locationLabel': 'Emplacement',
+  'sheep.notes.label': 'Notes',
+  'sheep.notes.placeholder': 'Notes generales (optionnel)',
   'sheep.add.submit': 'Ajouter',
   'sheep.edit.title': 'Modifier le mouton',
   'sheep.edit.tagPlaceholder': 'Nouveau nom',
@@ -485,6 +501,7 @@ const translationsFr = {
   'history.import.success': 'Données importées depuis le fichier',
   'history.clear': 'Toutes les données ont été supprimées',
   'history.details.postcode': 'code postal {from} -> {postcode}',
+  'history.details.notesUpdated': 'notes mises a jour',
   'history.details.area': 'surface {from} -> {area}',
   'history.details.perimeter': 'périmètre {from} -> {perimeter}',
   'alert.earmarkDuplicate': 'Cette marque auriculaire est déjà attribuée à un autre mouton.',
@@ -505,10 +522,14 @@ const translationsFr = {
   'fieldZone': 'Pâturage / Zone',
   'paddock.add.namePlaceholder': 'Nom du pâturage',
   'paddock.add.postcodePlaceholder': 'Code postal (optionnel)',
+  'paddock.notes.label': 'Notes',
+  'paddock.notes.placeholder': 'Notes generales (optionnel)',
   'paddock.edit.namePlaceholder': 'Nom du pâturage',
   'paddock.edit.postcodePlaceholder': 'Code postal (optionnel)',
   'zone.add.namePlaceholder': 'Nom de la zone',
-  'zone.edit.namePlaceholder': 'Nom de la zone'
+  'zone.edit.namePlaceholder': 'Nom de la zone',
+  'zone.notes.label': 'Notes',
+  'zone.notes.placeholder': 'Notes generales (optionnel)'
 }
 
 translations.fr = translationsFr
@@ -585,6 +606,8 @@ function applyStaticTranslations(){
   setText('sheep-modal-gender-male-label', t('sheep.gender.male'))
   setText('sheep-modal-pedigree-label', t('sheep.add.pedigreeLabel'))
   setText('sheep-modal-location-label', t('sheep.add.locationLabel'))
+  setText('sheep-modal-notes-label', t('sheep.notes.label'))
+  setPlaceholder('sheep-modal-notes', t('sheep.notes.placeholder'))
   setText('sheep-modal-submit', t('sheep.add.submit'))
 
   setText('sheep-edit-modal-title', t('sheep.edit.title'))
@@ -594,17 +617,23 @@ function applyStaticTranslations(){
   setText('sheep-edit-gender-label', t('sheep.edit.genderLabel'))
   setText('sheep-edit-pedigree-label', t('sheep.edit.pedigreeLabel'))
   setText('sheep-edit-location-label', t('sheep.edit.locationLabel'))
+  setText('sheep-edit-notes-label', t('sheep.notes.label'))
+  setPlaceholder('sheep-edit-notes', t('sheep.notes.placeholder'))
   setText('sheep-edit-modal-submit', t('sheep.edit.submit'))
 
   // Paddock modals
   setText('paddock-modal-title', t('paddock.add.title'))
   setPlaceholder('paddock-modal-name', t('paddock.add.namePlaceholder'))
   setPlaceholder('paddock-modal-postcode', t('paddock.add.postcodePlaceholder'))
+  setText('paddock-modal-notes-label', t('paddock.notes.label'))
+  setPlaceholder('paddock-modal-notes', t('paddock.notes.placeholder'))
   setText('paddock-modal-submit', t('ui.add'))
   
   setText('paddock-edit-modal-title', t('paddock.edit.title'))
   setPlaceholder('paddock-edit-name', t('paddock.edit.namePlaceholder'))
   setPlaceholder('paddock-edit-postcode', t('paddock.edit.postcodePlaceholder'))
+  setText('paddock-edit-notes-label', t('paddock.notes.label'))
+  setPlaceholder('paddock-edit-notes', t('paddock.notes.placeholder'))
   setText('paddock-edit-submit', t('ui.save'))
 
   // Zone modals
@@ -612,12 +641,16 @@ function applyStaticTranslations(){
   setPlaceholder('zone-modal-name', t('zone.add.namePlaceholder'))
   setPlaceholder('zone-modal-area', t('zone.add.areaPlaceholder'))
   setPlaceholder('zone-modal-perimeter', t('zone.add.perimeterPlaceholder'))
+  setText('zone-modal-notes-label', t('zone.notes.label'))
+  setPlaceholder('zone-modal-notes', t('zone.notes.placeholder'))
   setText('zone-modal-submit', t('ui.add'))
 
   setText('zone-edit-modal-title', t('zone.edit.title'))
   setPlaceholder('zone-edit-name', t('zone.edit.namePlaceholder'))
   setPlaceholder('zone-edit-area', t('zone.edit.areaPlaceholder'))
   setPlaceholder('zone-edit-perimeter', t('zone.edit.perimeterPlaceholder'))
+  setText('zone-edit-notes-label', t('zone.notes.label'))
+  setPlaceholder('zone-edit-notes', t('zone.notes.placeholder'))
   setText('zone-edit-submit', t('ui.save'))
 
   // Move modals
@@ -836,6 +869,7 @@ function load(){
         name: z.name,
         area: Number.isFinite(Number(z.area)) ? Number(z.area) : null,
         perimeter: Number.isFinite(Number(z.perimeter)) ? Number(z.perimeter) : null,
+        notes: typeof z.notes === 'string' ? z.notes.trim() : '',
         emptySince: z.emptySince ?? Date.now()
       })) : []
     })) : []
@@ -961,6 +995,7 @@ function importDataFile(file){
           name: z.name,
           area: Number.isFinite(Number(z.area)) ? Number(z.area) : null,
           perimeter: Number.isFinite(Number(z.perimeter)) ? Number(z.perimeter) : null,
+          notes: typeof z.notes === 'string' ? z.notes.trim() : '',
           emptySince: z.emptySince ?? Date.now()
         })) : []
       })) : []
@@ -1014,7 +1049,11 @@ function render(){
   sheepList.innerHTML = state.sheep.map(s => `
       <div class="sheep-card">
         <div class="sheep-card-body">
-          <button type="button" class="sheep-tag-edit-button" data-id="${s.id}" aria-label="${t('aria.editSheepName', { tag: s.tag })}">${genderIcon(s.gender)}${s.tag}</button>
+          <div class="sheep-name-row">
+            <button type="button" class="sheep-tag-edit-button" data-id="${s.id}" aria-label="${t('aria.editSheepName', { tag: s.tag })}">✎</button>
+            <span class="sheep-name-label">${s.tag}${genderIcon(s.gender)}</span>
+          </div>
+          ${s.earmark ? `<small class="sheep-earmark">🏷 ${s.earmark}</small>` : `<small class="sheep-earmark sheep-earmark--empty">&nbsp;</small>`}
           <small>${paddockName(s.paddockId)}${s.zoneId ? ' / ' + zoneName(s.paddockId, s.zoneId) : ''}</small>
           <small>${t('labels.lastUpdated', { date: formatDate(s.lastUpdated), days: daysSince(s.lastUpdated) })}</small>
         </div>
@@ -1091,6 +1130,7 @@ function renderPaddock(p){
         const status = z.emptySince ? t('zone.status.empty', { days: emptyDays }) : `${t('zone.status.occupied')}${sheepCount ? ` (${sheepCount})` : ''}`
         const zoneArea = z.area !== null ? `${z.area} m2` : ''
         const zonePerimeter = z.perimeter !== null ? `${z.perimeter} m` : ''
+        const zoneNotes = (z.notes || '').trim()
         const bulkMoveButton = sheepCount > 1 ? `<button type="button" class="zone-bulk-move-button" data-paddock-id="${p.id}" data-zone-id="${z.id}">${t('zone.bulkMove')}</button>` : ''
         const sheepLabel = sheepCount
           ? `<div class="zone-sheep-list${sheepCount > 3 ? ' is-scrollable' : ''}">${sheepInZone.map(s => `<button type="button" class="zone-sheep-link" data-sheep-id="${s.id}" aria-label="${t('aria.moveSheep', { tag: s.tag })}">${sheepIcon()}${s.tag}</button>`).join('')}</div>${bulkMoveButton}`
@@ -1098,7 +1138,7 @@ function renderPaddock(p){
         const stallZone = isStalZone(p, z)
         const useStallBackground = isStalPaddock(p)
         const canDeleteZone = !stallZone && p.zones.length > 1
-        return `<div class="zone-item${useStallBackground ? ' stall-zone-item' : ''}" data-paddock-id="${p.id}" data-zone-id="${z.id}">${canDeleteZone ? `<button type="button" class="zone-delete-button" data-paddock-id="${p.id}" data-zone-id="${z.id}" aria-label="${t('aria.deleteZone')}">−</button>` : ''}<div class="zone-header"><div class="zone-title-row"><button type="button" class="zone-edit-button" data-paddock-id="${p.id}" data-zone-id="${z.id}" aria-label="${t('aria.editZone')}">✎</button><strong>${z.name}</strong></div><div class="zone-metrics">${zoneArea ? `<span class="zone-metric">${zoneArea}</span>` : ''}${zonePerimeter ? `<span class="zone-metric">${zonePerimeter}</span>` : ''}</div><small>${status}</small></div><div class="zone-bottom">${sheepLabel}</div></div>`
+        return `<div class="zone-item${useStallBackground ? ' stall-zone-item' : ''}" data-paddock-id="${p.id}" data-zone-id="${z.id}">${canDeleteZone ? `<button type="button" class="zone-delete-button" data-paddock-id="${p.id}" data-zone-id="${z.id}" aria-label="${t('aria.deleteZone')}">−</button>` : ''}<div class="zone-header"><div class="zone-title-row"><button type="button" class="zone-edit-button" data-paddock-id="${p.id}" data-zone-id="${z.id}" aria-label="${t('aria.editZone')}">✎</button><strong>${z.name}</strong></div><div class="zone-metrics">${zoneArea ? `<span class="zone-metric">${zoneArea}</span>` : ''}${zonePerimeter ? `<span class="zone-metric">${zonePerimeter}</span>` : ''}</div><small>${status}</small>${zoneNotes ? `<p class="entity-notes">${zoneNotes}</p>` : ''}</div><div class="zone-bottom">${sheepLabel}</div></div>`
       }).join('')}
       <button type="button" class="zone-item add-zone-button${isStalPaddock(p) ? ' stall-zone-item' : ''}" data-paddock-id="${p.id}" aria-label="${t('aria.addZone')}">
         <span class="add-zone-icon">+</span>
@@ -1657,6 +1697,10 @@ function openEditZoneModal(paddockId, zoneId){
   if(perimeterInput){
     perimeterInput.value = zone.perimeter ?? ''
   }
+  const notesInput = document.getElementById('zone-edit-notes')
+  if(notesInput){
+    notesInput.value = zone.notes || ''
+  }
 
   openModal('zone-edit-modal')
 }
@@ -1805,25 +1849,30 @@ document.getElementById('zone-edit-form')?.addEventListener('submit', e => {
   const nameInput = document.getElementById('zone-edit-name')
   const areaInput = document.getElementById('zone-edit-area')
   const perimeterInput = document.getElementById('zone-edit-perimeter')
+  const notesInput = document.getElementById('zone-edit-notes')
   const nextName = nameInput ? nameInput.value.trim() : ''
   const nextArea = areaInput && areaInput.value.trim() !== '' ? Number(areaInput.value.trim()) : null
   const nextPerimeter = perimeterInput && perimeterInput.value.trim() !== '' ? Number(perimeterInput.value.trim()) : null
+  const nextNotes = notesInput ? notesInput.value.trim() : ''
 
   const beforeName = zone.name
   const beforeArea = zone.area
   const beforePerimeter = zone.perimeter
+  const beforeNotes = zone.notes || ''
 
   if(!isStalZone(paddock, zone) && nextName){
     zone.name = nextName
   }
   zone.area = nextArea
   zone.perimeter = nextPerimeter
+  zone.notes = nextNotes
 
-  if(beforeName !== zone.name || beforeArea !== zone.area || beforePerimeter !== zone.perimeter){
+  if(beforeName !== zone.name || beforeArea !== zone.area || beforePerimeter !== zone.perimeter || beforeNotes !== zone.notes){
     const details = []
     if(beforeName !== zone.name) details.push(t('history.details.name', { from: beforeName, name: zone.name }))
     if(beforeArea !== zone.area) details.push(t('history.details.area', { from: beforeArea ?? '-', area: zone.area ?? '-' }))
     if(beforePerimeter !== zone.perimeter) details.push(t('history.details.perimeter', { from: beforePerimeter ?? '-', perimeter: zone.perimeter ?? '-' }))
+    if(beforeNotes !== zone.notes) details.push(t('history.details.notesUpdated'))
     addHistory('zone', t('history.zone.updated', { details: details.join(', ') }))
   }
 
@@ -2243,13 +2292,15 @@ document.getElementById('zone-modal-form')?.addEventListener('submit', e => {
   const zoneName = document.getElementById('zone-modal-name').value.trim()
   const areaValue = document.getElementById('zone-modal-area').value.trim()
   const perimeterValue = document.getElementById('zone-modal-perimeter').value.trim()
+  const notes = (document.getElementById('zone-modal-notes')?.value || '').trim()
   const area = areaValue === '' ? null : Number(areaValue)
   const perimeter = perimeterValue === '' ? null : Number(perimeterValue)
   if(!zoneName || !paddockId) return
   const paddock = getPaddock(paddockId)
   if(!paddock) return
-  paddock.zones.push({id:uid(),name:zoneName,area,perimeter,emptySince: Date.now()})
+  paddock.zones.push({id:uid(),name:zoneName,area,perimeter,notes,emptySince: Date.now()})
   addHistory('zone', t('history.zone.added', { name: zoneName, paddock: paddock.name }))
+  document.getElementById('zone-modal-notes').value = ''
   save(); render(); closeModal('zone-modal')
 })
 
