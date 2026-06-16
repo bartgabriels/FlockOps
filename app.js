@@ -28,7 +28,7 @@ const translations = {
     'sheep.gender.female': 'Ooi',
     'sheep.gender.male': 'Ram',
     'sheep.add.pedigreeLabel': 'Stamboom',
-    'sheep.add.locationLabel': 'Locatie',
+    'sheep.locationLabel': 'Locatie',
     'sheep.notes.label': 'Notities',
     'sheep.notes.placeholder': 'Algemene notities (optioneel)',
     'sheep.add.submit': 'Toevoegen',
@@ -38,7 +38,6 @@ const translations = {
     'sheep.edit.earmarkPlaceholder': 'Oorkenmerk toevoegen',
     'sheep.edit.genderLabel': 'Geslacht',
     'sheep.edit.pedigreeLabel': 'Stamboom',
-    'sheep.edit.locationLabel': 'Locatie',
     'sheep.edit.submit': 'Opslaan',
     'sheep.location.unknownPaddock': 'Onbekend veld',
     'sheep.location.unknownZone': 'Onbekende zone',
@@ -89,8 +88,8 @@ const translations = {
     'zone.add.title': 'Zone toevoegen',
     'zone.add.paddockLabel': 'Weide',
     'zone.add.nameLabel': 'Zone naam',
-    'zone.add.areaLabel': 'Oppervlakte (m2)',
-    'zone.add.areaPlaceholder': 'Oppervlakte (m2)',
+    'zone.areaLabel': 'Oppervlakte (m2)',
+    'zone.areaPlaceholderWithUnit': 'Oppervlakte (m2)',
     'zone.add.perimeterLabel': 'Omtrek (m)',
     'zone.add.perimeterPlaceholder': 'Omtrek (m)',
     'zone.notes.label': 'Notities',
@@ -99,7 +98,6 @@ const translations = {
     'zone.edit.title': 'Zone bewerken',
     'zone.edit.paddockLabel': 'Weide',
     'zone.edit.nameLabel': 'Zone naam',
-    'zone.edit.areaLabel': 'Oppervlakte (m2)',
     'zone.edit.areaPlaceholder': 'Oppervlakte',
     'zone.edit.perimeterLabel': 'Omtrek (m)',
     'zone.edit.perimeterPlaceholder': 'Omtrek',
@@ -202,7 +200,7 @@ const translations = {
     'sheep.gender.female': 'Ewe',
     'sheep.gender.male': 'Ram',
     'sheep.add.pedigreeLabel': 'Pedigree',
-    'sheep.add.locationLabel': 'Location',
+    'sheep.locationLabel': 'Location',
     'sheep.notes.label': 'Notes',
     'sheep.notes.placeholder': 'General notes (optional)',
     'sheep.add.submit': 'Add',
@@ -212,7 +210,6 @@ const translations = {
     'sheep.edit.earmarkPlaceholder': 'Add earmark',
     'sheep.edit.genderLabel': 'Sex',
     'sheep.edit.pedigreeLabel': 'Pedigree',
-    'sheep.edit.locationLabel': 'Location',
     'sheep.edit.submit': 'Save',
     'sheep.location.unknownPaddock': 'Unknown paddock',
     'sheep.location.unknownZone': 'Unknown zone',
@@ -263,8 +260,8 @@ const translations = {
     'zone.add.title': 'Add zone',
     'zone.add.paddockLabel': 'Paddock',
     'zone.add.nameLabel': 'Zone name',
-    'zone.add.areaLabel': 'Area (m2)',
-    'zone.add.areaPlaceholder': 'Area (m2)',
+    'zone.areaLabel': 'Area (m2)',
+    'zone.areaPlaceholderWithUnit': 'Area (m2)',
     'zone.add.perimeterLabel': 'Perimeter (m)',
     'zone.add.perimeterPlaceholder': 'Perimeter (m)',
     'zone.notes.label': 'Notes',
@@ -273,7 +270,6 @@ const translations = {
     'zone.edit.title': 'Edit zone',
     'zone.edit.paddockLabel': 'Paddock',
     'zone.edit.nameLabel': 'Zone name',
-    'zone.edit.areaLabel': 'Area (m2)',
     'zone.edit.areaPlaceholder': 'Area',
     'zone.edit.perimeterLabel': 'Perimeter (m)',
     'zone.edit.perimeterPlaceholder': 'Perimeter',
@@ -379,7 +375,7 @@ const translationsFr = {
   'sheep.gender.female': 'Brebis',
   'sheep.gender.male': 'Bélier',
   'sheep.add.pedigreeLabel': 'Pedigree',
-  'sheep.add.locationLabel': 'Emplacement',
+  'sheep.locationLabel': 'Emplacement',
   'sheep.notes.label': 'Notes',
   'sheep.notes.placeholder': 'Notes generales (optionnel)',
   'sheep.add.submit': 'Ajouter',
@@ -389,7 +385,6 @@ const translationsFr = {
   'sheep.edit.earmarkPlaceholder': 'Ajouter une marque auriculaire',
   'sheep.edit.genderLabel': 'Sexe',
   'sheep.edit.pedigreeLabel': 'Pedigree',
-  'sheep.edit.locationLabel': 'Emplacement',
   'sheep.edit.submit': 'Enregistrer',
   'sheep.location.unknownPaddock': 'Pâturage inconnu',
   'sheep.location.unknownZone': 'Zone inconnue',
@@ -438,15 +433,14 @@ const translationsFr = {
   'zone.add.title': 'Ajouter une zone',
   'zone.add.paddockLabel': 'Pâturage',
   'zone.add.nameLabel': 'Nom de la zone',
-  'zone.add.areaLabel': 'Surface (m2)',
-  'zone.add.areaPlaceholder': 'Surface (m2)',
+  'zone.areaLabel': 'Surface (m2)',
+  'zone.areaPlaceholderWithUnit': 'Surface (m2)',
   'zone.add.perimeterLabel': 'Périmètre (m)',
   'zone.add.perimeterPlaceholder': 'Périmètre (m)',
   'zone.add.submit': 'Ajouter',
   'zone.edit.title': 'Modifier la zone',
   'zone.edit.paddockLabel': 'Pâturage',
   'zone.edit.nameLabel': 'Nom de la zone',
-  'zone.edit.areaLabel': 'Surface (m2)',
   'zone.edit.areaPlaceholder': 'Surface',
   'zone.edit.perimeterLabel': 'Périmètre (m)',
   'zone.edit.perimeterPlaceholder': 'Périmètre',
@@ -605,7 +599,7 @@ function applyStaticTranslations(){
   setText('sheep-modal-gender-female-label', t('sheep.gender.female'))
   setText('sheep-modal-gender-male-label', t('sheep.gender.male'))
   setText('sheep-modal-pedigree-label', t('sheep.add.pedigreeLabel'))
-  setText('sheep-modal-location-label', t('sheep.add.locationLabel'))
+  setText('sheep-modal-location-label', t('sheep.locationLabel'))
   setText('sheep-modal-notes-label', t('sheep.notes.label'))
   setPlaceholder('sheep-modal-notes', t('sheep.notes.placeholder'))
   setText('sheep-modal-submit', t('sheep.add.submit'))
@@ -616,7 +610,7 @@ function applyStaticTranslations(){
   setPlaceholder('sheep-edit-earmark-input', t('sheep.edit.earmarkPlaceholder'))
   setText('sheep-edit-gender-label', t('sheep.edit.genderLabel'))
   setText('sheep-edit-pedigree-label', t('sheep.edit.pedigreeLabel'))
-  setText('sheep-edit-location-label', t('sheep.edit.locationLabel'))
+  setText('sheep-edit-location-label', t('sheep.locationLabel'))
   setText('sheep-edit-notes-label', t('sheep.notes.label'))
   setPlaceholder('sheep-edit-notes', t('sheep.notes.placeholder'))
   setText('sheep-edit-modal-submit', t('sheep.edit.submit'))
@@ -639,7 +633,7 @@ function applyStaticTranslations(){
   // Zone modals
   setText('zone-modal-title', t('zone.add.title'))
   setPlaceholder('zone-modal-name', t('zone.add.namePlaceholder'))
-  setPlaceholder('zone-modal-area', t('zone.add.areaPlaceholder'))
+  setPlaceholder('zone-modal-area', t('zone.areaPlaceholderWithUnit'))
   setPlaceholder('zone-modal-perimeter', t('zone.add.perimeterPlaceholder'))
   setText('zone-modal-notes-label', t('zone.notes.label'))
   setPlaceholder('zone-modal-notes', t('zone.notes.placeholder'))
