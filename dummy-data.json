@@ -1,0 +1,480 @@
+{
+  "paddocks": [
+    {
+      "id": "flqsiwl",
+      "name": "Stal",
+      "postcode": "2040",
+      "zones": [
+        {
+          "id": "x27gavg",
+          "name": "Stal",
+          "area": 8,
+          "perimeter": 0,
+          "emptySince": null
+        }
+      ]
+    },
+    {
+      "id": "n65pnkh",
+      "name": "MAS",
+      "postcode": "2000",
+      "zones": [
+        {
+          "id": "x9hrbxi",
+          "name": "Intrede van Napoleon",
+          "area": 500,
+          "perimeter": 90,
+          "emptySince": null
+        },
+        {
+          "id": "ccr94d6",
+          "name": "Retabel van Averbode",
+          "area": 500,
+          "perimeter": 100,
+          "emptySince": null
+        }
+      ]
+    },
+    {
+      "id": "3ecycrj",
+      "name": "Rijksmuseum",
+      "postcode": "1071XX",
+      "zones": [
+        {
+          "id": "5hdw7ho",
+          "name": "De Nachtwacht",
+          "area": 250,
+          "perimeter": 70,
+          "emptySince": null
+        }
+      ]
+    },
+    {
+      "id": "ganbtou",
+      "name": "Louvre",
+      "postcode": "75001",
+      "zones": [
+        {
+          "id": "rxhq9el",
+          "name": "Mona Lisa",
+          "area": 20,
+          "perimeter": 20,
+          "emptySince": 1781607284770
+        }
+      ]
+    }
+  ],
+  "sheep": [
+    {
+      "id": "ez5riho",
+      "tag": "Schaap 1",
+      "earmark": null,
+      "gender": "female",
+      "motherId": null,
+      "fatherId": null,
+      "paddockId": "n65pnkh",
+      "zoneId": "ccr94d6",
+      "lastUpdated": 1781606311286
+    },
+    {
+      "id": "93z2ya6",
+      "tag": "Schaap 2",
+      "earmark": null,
+      "gender": "male",
+      "motherId": null,
+      "fatherId": null,
+      "paddockId": "n65pnkh",
+      "zoneId": "x9hrbxi",
+      "lastUpdated": 1781606410267
+    },
+    {
+      "id": "sxcmdrk",
+      "tag": "Barbara",
+      "earmark": "AB12345",
+      "gender": "male",
+      "motherId": "ez5riho",
+      "fatherId": "93z2ya6",
+      "paddockId": "flqsiwl",
+      "zoneId": "x27gavg",
+      "lastUpdated": 1781606416265
+    },
+    {
+      "id": "tv1a5yt",
+      "tag": "Roosje",
+      "earmark": "123456789",
+      "gender": "female",
+      "motherId": null,
+      "fatherId": null,
+      "paddockId": "3ecycrj",
+      "zoneId": "5hdw7ho",
+      "lastUpdated": 1781606421783
+    },
+    {
+      "id": "x0t67n4",
+      "tag": "Lammer",
+      "earmark": "42323432324",
+      "gender": "female",
+      "motherId": null,
+      "fatherId": null,
+      "paddockId": "n65pnkh",
+      "zoneId": "ccr94d6",
+      "lastUpdated": 1781606380694
+    }
+  ],
+  "history": [
+    {
+      "id": "02lhzyz",
+      "ts": 1781607858753,
+      "entity": "zone",
+      "message": "Zone Stal / Stal NL verwijderd"
+    },
+    {
+      "id": "z51bov5",
+      "ts": 1781607848141,
+      "entity": "zone",
+      "message": "Zone bijgewerkt: naam Zone 2 -> Retabel van Averbode"
+    },
+    {
+      "id": "s48mnp8",
+      "ts": 1781607824959,
+      "entity": "zone",
+      "message": "Zone bijgewerkt: naam Zone 1 -> Intrede van Napoleon"
+    },
+    {
+      "id": "vq3eubi",
+      "ts": 1781607709771,
+      "entity": "zone",
+      "message": "Zone bijgewerkt: naam Zone 1 -> De Nachtwacht"
+    },
+    {
+      "id": "1k092ug",
+      "ts": 1781607595111,
+      "entity": "weide",
+      "message": "Weide bijgewerkt: naam Weide 1 -> MAS, postcode 2040 -> 2000"
+    },
+    {
+      "id": "739jws4",
+      "ts": 1781607578159,
+      "entity": "weide",
+      "message": "Weide bijgewerkt: naam Weide 2 -> Rijksmuseum, postcode 4645BB -> 1071XX"
+    },
+    {
+      "id": "krs2vmc",
+      "ts": 1781607284770,
+      "entity": "zone",
+      "message": "Zone Mona Lisa toegevoegd in weide Louvre"
+    },
+    {
+      "id": "r2lqzju",
+      "ts": 1781607268521,
+      "entity": "weide",
+      "message": "Weide Louvre toegevoegd"
+    },
+    {
+      "id": "m8ri6gq",
+      "ts": 1781606421783,
+      "entity": "schaap",
+      "message": "Roosje verplaatst van Weide 1 / Zone 2 naar Weide 2 / Zone 1"
+    },
+    {
+      "id": "1vumn1t",
+      "ts": 1781606416265,
+      "entity": "schaap",
+      "message": "Barbara verplaatst van Weide 1 / Zone 2 naar Stal / Stal"
+    },
+    {
+      "id": "skfzgqt",
+      "ts": 1781606410267,
+      "entity": "schaap",
+      "message": "Schaap 2 verplaatst van Weide 1 / Zone 2 naar Weide 1 / Zone 1"
+    },
+    {
+      "id": "k4tl13s",
+      "ts": 1781606380694,
+      "entity": "schaap",
+      "message": "Schaap bijgewerkt: oorkenmerk toegevoegd: 42323432324"
+    },
+    {
+      "id": "iogpld4",
+      "ts": 1781606311286,
+      "entity": "schaap",
+      "message": "Schaap 1, Schaap 2, Barbara, Roosje, Lammer verplaatst van Stal / Stal naar Weide 1 / Zone 2"
+    },
+    {
+      "id": "00o1qsk",
+      "ts": 1781605283031,
+      "entity": "zone",
+      "message": "Zone Stal NL toegevoegd in weide Stal"
+    },
+    {
+      "id": "pv6h1oq",
+      "ts": 1781604369289,
+      "entity": "schaap",
+      "message": "Schaap 1, Schaap 2, Barbara, Roosje, Lammer verplaatst van Weide 1 / Zone 1 naar Stal / Stal"
+    },
+    {
+      "id": "g6bnd2q",
+      "ts": 1781603935035,
+      "entity": "schaap",
+      "message": "Lammer toegevoegd in Weide 1 / Zone 1"
+    },
+    {
+      "id": "kjql4bn",
+      "ts": 1781603910254,
+      "entity": "schaap",
+      "message": "Roosje moved from Stal / Stal to Weide 1 / Zone 1"
+    },
+    {
+      "id": "fodtmuu",
+      "ts": 1781603901474,
+      "entity": "schaap",
+      "message": "Schaap 1, Schaap 2 moved from Weide 1 / Zone 2 to Weide 1 / Zone 1"
+    },
+    {
+      "id": "va4jvt0",
+      "ts": 1781602621561,
+      "entity": "schaap",
+      "message": "Schaap bijgewerkt: oorkenmerk toegevoegd: AB12345"
+    },
+    {
+      "id": "dvovqih",
+      "ts": 1781602258887,
+      "entity": "schaap",
+      "message": "Schaap bijgewerkt: oorkenmerk toegevoegd: 123456789"
+    },
+    {
+      "id": "6eu7a7y",
+      "ts": 1781602240406,
+      "entity": "schaap",
+      "message": "Roosje toegevoegd in Stal / Stal"
+    },
+    {
+      "id": "0un68gp",
+      "ts": 1781602064218,
+      "entity": "schaap",
+      "message": "Schaap hernoemt: Schaap 3 -> Barbara"
+    },
+    {
+      "id": "kjy21dx",
+      "ts": 1781601567103,
+      "entity": "schaap",
+      "message": "Schaap 1, Schaap 2 verplaatst van Stal / Stal naar Weide 1 / Zone 2"
+    },
+    {
+      "id": "8rnaryv",
+      "ts": 1781600983138,
+      "entity": "zone",
+      "message": "Zone Weide 2 / Zone 2 verwijderd"
+    },
+    {
+      "id": "b2qax3f",
+      "ts": 1781600407658,
+      "entity": "schaap",
+      "message": "Schaap 3 toegevoegd in Weide 1 / Zone 1"
+    },
+    {
+      "id": "i28fmex",
+      "ts": 1781599816216,
+      "entity": "schaap",
+      "message": "Schaap bijgewerkt: naam Schaap 2 -> Schaap 2, geslacht - -> Ram"
+    },
+    {
+      "id": "k4jlhf9",
+      "ts": 1781599813714,
+      "entity": "schaap",
+      "message": "Schaap bijgewerkt: naam Schaap 1 -> Schaap 1, geslacht - -> Ooi"
+    },
+    {
+      "id": "pyrvfe0",
+      "ts": 1781598800861,
+      "entity": "schaap",
+      "message": "Schaap 1, Schaap 2 verplaatst van Weide 2 / Zone 2 naar Stal / Stal"
+    },
+    {
+      "id": "il0mi63",
+      "ts": 1781598675609,
+      "entity": "schaap",
+      "message": "Schaap 1, Schaap 2 verplaatst van Weide 2 / Zone 1 naar Weide 2 / Zone 2"
+    },
+    {
+      "id": "bvqx7rz",
+      "ts": 1781598665881,
+      "entity": "zone",
+      "message": "Zone Zone 2 toegevoegd in weide Weide 2"
+    },
+    {
+      "id": "2gn4uni",
+      "ts": 1781598496708,
+      "entity": "schaap",
+      "message": "Naam gewijzigd van Schaap 3 naar Schaap 2"
+    },
+    {
+      "id": "20b6ycp",
+      "ts": 1781598091536,
+      "entity": "schaap",
+      "message": "Schaap 1, Schaap 3 verplaatst van Stal / Stal naar Weide 2 / Zone 1"
+    },
+    {
+      "id": "yiab8zt",
+      "ts": 1781598011752,
+      "entity": "zone",
+      "message": "Zone bijgewerkt: Weide 2 / Zone 1 -> Zone 1, oppervlakte - -> 250, omtrek - -> 70"
+    },
+    {
+      "id": "9sehn36",
+      "ts": 1781598001081,
+      "entity": "zone",
+      "message": "Zone bijgewerkt: Weide 1 / Zone 2 -> Zone 2, oppervlakte - -> 500, omtrek - -> 100"
+    },
+    {
+      "id": "zomw5bh",
+      "ts": 1781597985315,
+      "entity": "zone",
+      "message": "Zone bijgewerkt: Weide 1 / Zone 1 -> Zone 1, oppervlakte - -> 500, omtrek - -> 90"
+    },
+    {
+      "id": "me3gwrr",
+      "ts": 1781597964381,
+      "entity": "zone",
+      "message": "Zone bijgewerkt: Stal / Stal -> Stal, oppervlakte - -> 8"
+    },
+    {
+      "id": "ro6uo7s",
+      "ts": 1781597699274,
+      "entity": "weide",
+      "message": "Weide bijgewerkt: Stal -> Stal, oppervlakte - -> 500, omtrek - -> 1000"
+    },
+    {
+      "id": "1vf7gaf",
+      "ts": 1781597411613,
+      "entity": "schaap",
+      "message": "Schaap 1, Schaap 3 verplaatst van Weide 1 / Zone 2 naar Stal / Stal"
+    },
+    {
+      "id": "4ezap5m",
+      "ts": 1781597389479,
+      "entity": "weide",
+      "message": "Weide bijgewerkt: Weide 2 -> Weide 2, postcode 4645 BB -> 4645BB"
+    },
+    {
+      "id": "54dwa31",
+      "ts": 1781597249184,
+      "entity": "weide",
+      "message": "Weide bijgewerkt: Weide 2 -> Weide 2, postcode 4645BB -> 4645 BB"
+    },
+    {
+      "id": "v1dki9i",
+      "ts": 1781597242209,
+      "entity": "weide",
+      "message": "Weide bijgewerkt: Weide 2 -> Weide 2, postcode 9000 -> 4645BB"
+    },
+    {
+      "id": "gfybehe",
+      "ts": 1781596456900,
+      "entity": "schaap",
+      "message": "Schaap 1, Schaap 3 verplaatst van Stal / Stal naar Weide 1 / Zone 2"
+    },
+    {
+      "id": "1u6mpjm",
+      "ts": 1781596451175,
+      "entity": "zone",
+      "message": "Zone Zone 1 toegevoegd in weide Weide 2"
+    },
+    {
+      "id": "elaldg7",
+      "ts": 1781596447035,
+      "entity": "zone",
+      "message": "Zone Zone 2 toegevoegd in weide Weide 1"
+    },
+    {
+      "id": "mijaw9i",
+      "ts": 1781596443920,
+      "entity": "zone",
+      "message": "Zone Zone 1 toegevoegd in weide Weide 1"
+    },
+    {
+      "id": "evwn986",
+      "ts": 1781596268206,
+      "entity": "weide",
+      "message": "Weide Weide 2 toegevoegd"
+    },
+    {
+      "id": "1atces3",
+      "ts": 1781596261839,
+      "entity": "weide",
+      "message": "Weide Weide 1 toegevoegd"
+    },
+    {
+      "id": "n0qpj3h",
+      "ts": 1781596234171,
+      "entity": "weide",
+      "message": "Weide bijgewerkt: Stal -> Stal, postcode - -> 2040"
+    },
+    {
+      "id": "gylna0n",
+      "ts": 1781595747132,
+      "entity": "weide",
+      "message": "Weide Veld 1 verwijderd en schapen automatisch verplaatst naar Stal / Stal: Schaap 1, Schaap 3"
+    },
+    {
+      "id": "xfhd1m1",
+      "ts": 1781595602848,
+      "entity": "schaap",
+      "message": "Schaap 3 verplaatst van Veld 1 / Zone 2 naar Veld 1 / Zone 1"
+    },
+    {
+      "id": "t3eeh0r",
+      "ts": 1781595597797,
+      "entity": "schaap",
+      "message": "Schaap 3 verplaatst van Stal / Stal naar Veld 1 / Zone 2"
+    },
+    {
+      "id": "kqlpiae",
+      "ts": 1781595593150,
+      "entity": "schaap",
+      "message": "Schaap 1 verplaatst van Stal / Stal naar Veld 1 / Zone 1"
+    },
+    {
+      "id": "u3ypxph",
+      "ts": 1781595324594,
+      "entity": "schaap",
+      "message": "Schaap 1, Schaap 3 verplaatst van Veld 1 / Zone 1 naar Stal / Stal"
+    },
+    {
+      "id": "0ap4bws",
+      "ts": 1781595258955,
+      "entity": "schaap",
+      "message": "Schaap 1, Schaap 3 verplaatst van Stal / Stal naar Veld 1 / Zone 1"
+    },
+    {
+      "id": "b742o0o",
+      "ts": 1781595174241,
+      "entity": "schaap",
+      "message": "Schapen verplaatst van Veld 1 / Zone 1 naar Stal / Stal: Schaap 1, Schaap 3"
+    },
+    {
+      "id": "s7rhl4u",
+      "ts": 1781595066523,
+      "entity": "schaap",
+      "message": "2 schapen verplaatst van Stal / Stal naar Veld 1 / Zone 1"
+    },
+    {
+      "id": "5h4278l",
+      "ts": 1781595059138,
+      "entity": "schaap",
+      "message": "Schaap 3 verplaatst van Veld 1 / Zone 1 naar Stal / Stal"
+    },
+    {
+      "id": "f1buh8e",
+      "ts": 1781595050397,
+      "entity": "schaap",
+      "message": "Naam gewijzigd van Schaap 2 naar Schaap 3"
+    },
+    {
+      "id": "zaf485x",
+      "ts": 1781595043783,
+      "entity": "schaap",
+      "message": "Schaap 1 verplaatst van Veld 1 / Zone 1 naar Stal / Stal"
+    }
+  ]
+}

@@ -96,15 +96,17 @@ De hoofdinterface gebruikt 3 tabs om drukte te verminderen:
 1. Open https://bartgabriels.github.io/Schapentracker/ in een moderne browser.
 2. Kies je taal met de dropdown bovenaan (Nederlands/English/Français).
 3. Gebruik de tabs om tussen weides/zones, schapen en historiek te wisselen.
-4. Voeg weides, zones en schapen toe.
-5. Gebruik de modals om te verplaatsen, bewerken of verwijderen.
-6. Data wordt automatisch opgeslagen in de browser.
+4. Test snel met [dummy-data.json](dummy-data.json) via de importknop.
+5. Voeg weides, zones en schapen toe.
+6. Gebruik de modals om te verplaatsen, bewerken of verwijderen.
+7. Data wordt automatisch opgeslagen in de browser.
 
 ## Bestandsstructuur
 
 - [index.html](index.html): structuur van de pagina en modals.
 - [app.js](app.js): state, businesslogica, event handling, opslag, weer, historiek en meertalige ondersteuning.
 - [styles.css](styles.css): layout en styling.
+- [dummy-data.json](dummy-data.json): voorbeeldbestand om import en functionaliteiten snel te testen.
 - [locales/translations.csv](locales/translations.csv): vertaaltabel (`key`, `nl`, `en`, `fr`) voor vertalers.
 - [gras.png](gras.png), [stal.png](stal.png), [schaap.png](schaap.png), [wol.png](wol.png): visuele assets.
 
@@ -196,15 +198,17 @@ The main interface uses 3 tabs to reduce visual clutter:
 1. Open https://bartgabriels.github.io/Schapentracker/ in a modern browser.
 2. Choose your language with the dropdown at the top (Nederlands/English/Français).
 3. Use tabs to switch between paddocks/zones, sheep, and history.
-4. Add paddocks, zones, and sheep.
-5. Use modals to move, edit, or delete.
-6. Data is automatically saved in your browser.
+4. Quick-test import with [dummy-data.json](dummy-data.json).
+5. Add paddocks, zones, and sheep.
+6. Use modals to move, edit, or delete.
+7. Data is automatically saved in your browser.
 
 ## File Structure
 
 - [index.html](index.html): page structure and modals.
 - [app.js](app.js): state, business logic, event handling, storage, weather, history, and multilingual support.
 - [styles.css](styles.css): layout and styling.
+- [dummy-data.json](dummy-data.json): sample file to quickly test import and app flows.
 - [locales/translations.csv](locales/translations.csv): translation table (`key`, `nl`, `en`, `fr`) for translators.
 - [gras.png](gras.png), [stal.png](stal.png), [schaap.png](schaap.png), [wol.png](wol.png): visual assets.
 
@@ -296,15 +300,17 @@ L'interface principale utilise 3 onglets pour reduire l'encombrement visuel :
 1. Ouvrez https://bartgabriels.github.io/Schapentracker/ dans un navigateur moderne.
 2. Choisissez votre langue en haut de la page (Nederlands/English/Francais).
 3. Utilisez les onglets pour basculer entre paturages/zones, moutons et historique.
-4. Ajoutez des paturages, des zones et des moutons.
-5. Utilisez les fenetres modales pour deplacer, modifier ou supprimer.
-6. Les donnees sont enregistrees automatiquement dans le navigateur.
+4. Testez rapidement l'import avec [dummy-data.json](dummy-data.json).
+5. Ajoutez des paturages, des zones et des moutons.
+6. Utilisez les fenetres modales pour deplacer, modifier ou supprimer.
+7. Les donnees sont enregistrees automatiquement dans le navigateur.
 
 ## Structure des fichiers
 
 - [index.html](index.html) : structure de la page et des modales.
 - [app.js](app.js) : etat, logique metier, gestion des evenements, stockage, meteo, historique et localisation multilingue.
 - [styles.css](styles.css) : mise en page et styles.
+- [dummy-data.json](dummy-data.json) : fichier exemple pour tester rapidement l'import et les flux principaux.
 - [locales/translations.csv](locales/translations.csv) : table de traduction (`key`, `nl`, `en`, `fr`) pour les traducteurs.
 - [gras.png](gras.png), [stal.png](stal.png), [schaap.png](schaap.png), [wol.png](wol.png) : assets visuels.
 
