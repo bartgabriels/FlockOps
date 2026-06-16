@@ -859,13 +859,15 @@ form button{
   display:flex;
   flex-direction:column;
   gap:6px;
-  max-height:none;
-  overflow-y:visible;
+  height:75vh;
+  max-height:75vh;
+  overflow-y:auto;
   padding-right:4px;
 }
 
 .history-list.is-scrollable{
-  max-height:170px;
+  height:75vh;
+  max-height:75vh;
   overflow-y:auto;
 }
 
