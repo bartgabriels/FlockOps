@@ -175,7 +175,7 @@ const translations = {
     'zone.edit.namePlaceholder': 'Zone naam'
   },
   en: {
-    'app.title': 'FlockOps,
+    'app.title': 'FlockOps',
     'ui.save': 'Save',
     'ui.upload': 'Upload',
     'ui.clear': 'Clear',
