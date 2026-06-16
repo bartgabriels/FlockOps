@@ -48,7 +48,21 @@
       <h2>Weide toevoegen</h2>
       <form id="paddock-modal-form" class="group-form">
         <input id="paddock-modal-name" placeholder="Naam weide" required>
+        <input id="paddock-modal-postcode" placeholder="Postcode (optioneel)">
         <button type="submit">Toevoegen</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="paddock-edit-modal" class="modal hidden" aria-hidden="true">
+    <div id="paddock-edit-modal-backdrop" class="modal-backdrop"></div>
+    <div class="modal-panel">
+      <button type="button" id="paddock-edit-modal-close" class="modal-close">×</button>
+      <h2>Weide bewerken</h2>
+      <form id="paddock-edit-form" class="group-form">
+        <input id="paddock-edit-name" placeholder="Naam weide" required>
+        <input id="paddock-edit-postcode" placeholder="Postcode (optioneel)">
+        <button type="submit">Opslaan</button>
       </form>
     </div>
   </div>

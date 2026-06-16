@@ -181,9 +181,80 @@ button.add-zone-button:hover {
   gap:8px;
 }
 
+.paddock-weather{
+  display:none;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:6px;
+  margin:2px 4px 8px;
+}
+
+.paddock-weather.is-visible{
+  display:grid;
+}
+
+.weather-toggle-button{
+  width:auto;
+  max-width:none;
+  margin:0;
+  padding:4px 8px;
+  border:1px solid #cde6d3;
+  border-radius:999px;
+  background:#effbf2;
+  color:#1f4332;
+  font-size:0.75rem;
+  cursor:pointer;
+}
+
+.weather-toggle-button:hover{
+  background:#e3f6e5;
+}
+
+.weather-day{
+  border:1px solid #e8eef0;
+  border-radius:8px;
+  background:#f8fbf9;
+  padding:4px 6px;
+  display:flex;
+  flex-direction:column;
+  gap:1px;
+}
+
+.weather-day strong{
+  font-size:0.75rem;
+  margin:0;
+}
+
+.weather-day small{
+  font-size:0.7rem;
+  color:#475569;
+}
+
+.paddock-weather-empty,
+.paddock-weather-loading,
+.paddock-weather-error{
+  display:block;
+  margin:2px 4px 8px;
+  font-size:0.75rem;
+  color:#64748b;
+}
+
+.paddock-weather-error{
+  color:#9f1239;
+}
+
 .paddock-sheep-count{
   color:#64748b;
   font-size:0.75rem;
+}
+
+.paddock-postcode{
+  color:#475569;
+  font-size:0.75rem;
+  background:#eef5ef;
+  border:1px solid #dbe8df;
+  border-radius:999px;
+  padding:1px 7px;
+  white-space:nowrap;
 }
 
 .paddock-delete-button{
@@ -203,6 +274,26 @@ button.add-zone-button:hover {
 }
 
 .paddock-delete-button:hover{
+  background:#dceadd;
+}
+
+.paddock-edit-button{
+  width:24px;
+  height:24px;
+  border-radius:50%;
+  border:none;
+  background:#eef5ef;
+  color:#1f4332;
+  font-size:0.9rem;
+  line-height:1;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+}
+
+.paddock-edit-button:hover{
   background:#dceadd;
 }
 
@@ -237,6 +328,10 @@ button.add-zone-button:hover {
 @media (max-width: 700px) {
   .zone-list {
     grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .paddock-weather{
+    grid-template-columns:1fr;
   }
 }
 

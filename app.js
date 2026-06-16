@@ -1,6 +1,116 @@
 const KEY = 'schapentracker:data'
 const state = { paddocks: [], sheep: [], history: [] }
 let expandedPaddockId = null
+const expandedWeatherPaddocks = new Set()
+const weatherCache = {}
+const weatherLoading = new Set()
+const WEATHER_TTL_MS = 60 * 60 * 1000
+const ZIP_COUNTRIES = ['BE', 'NL']
+
+function weatherLabel(code){
+  if(code === 0) return 'Zonnig'
+  if(code >= 1 && code <= 2) return 'Halfbewolkt'
+  if(code === 3) return 'Bewolkt'
+  if(code >= 45 && code <= 48) return 'Mist'
+  if((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return 'Regen'
+  if((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) return 'Sneeuw'
+  if(code >= 95) return 'Onweer'
+  return 'Wisselend'
+}
+
+function formatForecastDay(dateString){
+  return new Date(`${dateString}T12:00:00`).toLocaleDateString('nl-NL', {
+    weekday: 'short', day: '2-digit', month: '2-digit'
+  })
+}
+
+async function fetchJson(url){
+  const response = await fetch(url)
+  if(!response.ok) throw new Error(`HTTP ${response.status}`)
+  return response.json()
+}
+
+async function resolveCoordinatesByPostcode(postcode){
+  for(const country of ZIP_COUNTRIES){
+    try {
+      const url = `https://api.zippopotam.us/${country}/${encodeURIComponent(postcode)}`
+      const data = await fetchJson(url)
+      if(Array.isArray(data.places) && data.places.length){
+        const place = data.places[0]
+        const lat = Number(place.latitude)
+        const lon = Number(place.longitude)
+        if(Number.isFinite(lat) && Number.isFinite(lon)){
+          return { lat, lon, country, place: place['place name'] || postcode }
+        }
+      }
+    } catch (err) {
+      // Try next country code
+    }
+  }
+  throw new Error('Postcode niet gevonden')
+}
+
+async function loadWeatherForPostcode(postcode){
+  if(weatherLoading.has(postcode)) return
+  weatherLoading.add(postcode)
+  try {
+    const coords = await resolveCoordinatesByPostcode(postcode)
+    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=3`
+    const forecast = await fetchJson(weatherUrl)
+    const daily = forecast.daily || {}
+    const times = Array.isArray(daily.time) ? daily.time.slice(0, 3) : []
+    const days = times.map((d, i) => ({
+      day: formatForecastDay(d),
+      label: weatherLabel(daily.weathercode?.[i]),
+      max: Math.round(Number(daily.temperature_2m_max?.[i] ?? 0)),
+      min: Math.round(Number(daily.temperature_2m_min?.[i] ?? 0)),
+      rain: Math.round(Number(daily.precipitation_probability_max?.[i] ?? 0))
+    }))
+
+    if(!days.length) throw new Error('Geen forecast data')
+
+    weatherCache[postcode] = {
+      fetchedAt: Date.now(),
+      days,
+      place: coords.place,
+      country: coords.country
+    }
+  } catch (err) {
+    weatherCache[postcode] = {
+      fetchedAt: Date.now(),
+      error: true
+    }
+  } finally {
+    weatherLoading.delete(postcode)
+    render()
+  }
+}
+
+function renderPaddockWeather(paddock, isVisible){
+  const visibilityClass = isVisible ? ' is-visible' : ''
+  const rawPostcode = (paddock.postcode || '').trim()
+  if(!rawPostcode){
+    return `<div class="paddock-weather paddock-weather-empty${visibilityClass}">Geen postcode voor forecast</div>`
+  }
+
+  const postcodeKey = rawPostcode.toUpperCase()
+  const cached = weatherCache[postcodeKey]
+  const isFresh = !!cached && (Date.now() - cached.fetchedAt) < WEATHER_TTL_MS
+
+  if((!cached || !isFresh) && !weatherLoading.has(postcodeKey)){
+    loadWeatherForPostcode(postcodeKey)
+  }
+
+  if(!cached || !isFresh){
+    return `<div class="paddock-weather paddock-weather-loading${visibilityClass}">3-daagse forecast laden...</div>`
+  }
+
+  if(cached.error){
+    return `<div class="paddock-weather paddock-weather-error${visibilityClass}">Geen forecast beschikbaar voor postcode ${postcodeKey}</div>`
+  }
+
+  return `<div class="paddock-weather${visibilityClass}">${cached.days.map(day => `<div class="weather-day"><strong>${day.day}</strong><small>${day.label}</small><small>${day.max}° / ${day.min}°</small><small>${day.rain}% regen</small></div>`).join('')}</div>`
+}
 
 function ensureDefaultStal(){
   if(state.paddocks.length > 0) return
@@ -9,6 +119,7 @@ function ensureDefaultStal(){
   state.paddocks.push({
     id: paddockId,
     name: 'Stal',
+    postcode: '',
     zones: [{ id: zoneId, name: 'Stal', emptySince: Date.now() }]
   })
 }
@@ -20,6 +131,7 @@ function load(){
     state.paddocks = Array.isArray(saved.paddocks) ? saved.paddocks.map(p => ({
       id: p.id,
       name: p.name,
+      postcode: typeof p.postcode === 'string' ? p.postcode : '',
       zones: Array.isArray(p.zones) ? p.zones.map(z => ({
         id: z.id,
         name: z.name,
@@ -121,6 +233,7 @@ function importDataFile(file){
       state.paddocks = Array.isArray(parsed.paddocks) ? parsed.paddocks.map(p => ({
         id: p.id,
         name: p.name,
+        postcode: typeof p.postcode === 'string' ? p.postcode : '',
         zones: Array.isArray(p.zones) ? p.zones.map(z => ({
           id: z.id,
           name: z.name,
@@ -206,20 +319,27 @@ function render(){
 
 function renderPaddock(p){
   const isExpanded = expandedPaddockId === p.id
+  const isWeatherExpanded = expandedWeatherPaddocks.has(p.id)
   const sheepCount = state.sheep.filter(s => s.paddockId === p.id).length
   const sheepLabel = sheepCount === 1 ? 'schaap' : 'schapen'
+  const paddockPostcode = (p.postcode || '').trim()
+  const weatherHtml = renderPaddockWeather(p, isWeatherExpanded)
   const canDeletePaddock = !isStalPaddock(p)
   return `<div class="card" data-id="${p.id}" ${isExpanded ? 'data-expanded="true"' : ''}>
     <div class="card-header" data-paddock-id="${p.id}" style="cursor:pointer;user-select:none">
       <div class="card-header-main">
         <strong>${p.name}</strong>
+        ${paddockPostcode ? `<span class="paddock-postcode">${paddockPostcode}</span>` : ''}
         <span class="paddock-sheep-count">${sheepCount} ${sheepLabel}</span>
       </div>
       <div class="card-header-actions">
         <span class="badge">${p.zones.length} zone(s)</span>
+        <button type="button" class="weather-toggle-button" data-paddock-id="${p.id}">Weervoorspelling</button>
+        <button type="button" class="paddock-edit-button" data-paddock-id="${p.id}" aria-label="Weide bewerken">✎</button>
         ${canDeletePaddock ? `<button type="button" class="paddock-delete-button" data-paddock-id="${p.id}" aria-label="Weide verwijderen">−</button>` : ''}
       </div>
     </div>
+    ${weatherHtml}
     <div class="zone-list" ${isExpanded ? '' : 'style="display:none"'}>
       ${p.zones.map(z => {
         const sheepInZone = state.sheep.filter(s => s.paddockId === p.id && s.zoneId === z.id)
@@ -319,6 +439,7 @@ function isStalZone(paddock, zone){
 
 let activeMoveSheepId = null
 let activeEditSheepId = null
+let activeEditPaddockId = null
 let pendingZoneDeletion = null
 let pendingPaddockDeletion = null
 let pendingZoneBulkMove = null
@@ -424,18 +545,37 @@ function availableTargetPaddocksForDelete(sourcePaddockId){
   return state.paddocks.filter(p => p.id !== sourcePaddockId && p.zones.length > 0)
 }
 
+function availableBulkMoveTargetZones(targetPaddockId, sourcePaddockId, sourceZoneId){
+  const targetPaddock = getPaddock(targetPaddockId)
+  if(!targetPaddock) return []
+  return targetPaddock.zones.filter(z => !(targetPaddockId === sourcePaddockId && z.id === sourceZoneId))
+}
+
+function availableBulkMoveTargetPaddocks(sourcePaddockId, sourceZoneId){
+  return state.paddocks.filter(p => availableBulkMoveTargetZones(p.id, sourcePaddockId, sourceZoneId).length > 0)
+}
+
 function populateZoneBulkMoveTargets(selectedPaddockId){
   const paddockSelect = document.getElementById('zone-bulk-move-target-paddock-modal')
   const zoneSelect = document.getElementById('zone-bulk-move-target-zone-modal')
   const submitBtn = document.getElementById('zone-bulk-move-submit')
   if(!paddockSelect || !zoneSelect || !pendingZoneBulkMove) return
 
-  const targetPaddocks = state.paddocks.filter(p => p.zones.length > 0)
-  paddockSelect.innerHTML = `<option value="" selected disabled hidden>Kies weide</option>` + targetPaddocks.map(p => `<option value="${p.id}"${p.id === selectedPaddockId ? ' selected' : ''}>${p.name}</option>`).join('')
+  const targetPaddocks = availableBulkMoveTargetPaddocks(pendingZoneBulkMove.sourcePaddockId, pendingZoneBulkMove.sourceZoneId)
+  if(!targetPaddocks.length){
+    paddockSelect.innerHTML = '<option value="">Geen doelweides beschikbaar</option>'
+    paddockSelect.disabled = true
+    zoneSelect.innerHTML = '<option value="">Geen doelzones beschikbaar</option>'
+    zoneSelect.disabled = true
+    if(submitBtn) submitBtn.disabled = true
+    return
+  }
 
-  const targetPaddockId = selectedPaddockId || paddockSelect.value
-  const targetPaddock = getPaddock(targetPaddockId)
-  const zones = targetPaddock ? targetPaddock.zones : []
+  const effectivePaddockId = selectedPaddockId || targetPaddocks[0].id
+  paddockSelect.disabled = false
+  paddockSelect.innerHTML = `<option value="" disabled hidden>Kies weide</option>` + targetPaddocks.map(p => `<option value="${p.id}"${p.id === effectivePaddockId ? ' selected' : ''}>${p.name}</option>`).join('')
+
+  const zones = availableBulkMoveTargetZones(effectivePaddockId, pendingZoneBulkMove.sourcePaddockId, pendingZoneBulkMove.sourceZoneId)
   if(zones.length){
     zoneSelect.innerHTML = `<option value="" selected disabled hidden>Kies zone</option>` + zones.map(z => `<option value="${z.id}">${z.name}</option>`).join('')
     zoneSelect.disabled = false
@@ -464,6 +604,12 @@ function openZoneBulkMoveModal(sourcePaddockId, sourceZoneId){
     return
   }
 
+  const targetPaddocks = availableBulkMoveTargetPaddocks(sourcePaddockId, sourceZoneId)
+  if(!targetPaddocks.length){
+    alert('Geen doelzone beschikbaar. Voeg eerst een extra zone of weide met zone toe.')
+    return
+  }
+
   pendingZoneBulkMove = { sourcePaddockId, sourceZoneId }
 
   const sourceLabel = document.getElementById('zone-bulk-move-source-name')
@@ -475,7 +621,7 @@ function openZoneBulkMoveModal(sourcePaddockId, sourceZoneId){
     sheepLabel.textContent = `${sheepInZone.length} schaap${sheepInZone.length === 1 ? '' : 'en'}`
   }
 
-  populateZoneBulkMoveTargets(sourcePaddockId)
+  populateZoneBulkMoveTargets(targetPaddocks[0].id)
   openModal('zone-bulk-move-modal')
 }
 
@@ -638,6 +784,29 @@ function closeEditSheepTagModal(){
   closeModal('sheep-tag-edit-modal')
 }
 
+function openEditPaddockModal(paddockId){
+  const paddock = getPaddock(paddockId)
+  if(!paddock) return
+  activeEditPaddockId = paddockId
+
+  const nameInput = document.getElementById('paddock-edit-name')
+  const postcodeInput = document.getElementById('paddock-edit-postcode')
+  if(nameInput){
+    nameInput.value = paddock.name || ''
+    nameInput.disabled = isStalPaddock(paddock)
+  }
+  if(postcodeInput){
+    postcodeInput.value = paddock.postcode || ''
+  }
+
+  openModal('paddock-edit-modal')
+}
+
+function closeEditPaddockModal(){
+  activeEditPaddockId = null
+  closeModal('paddock-edit-modal')
+}
+
 function openModal(id){
   const modal = document.getElementById(id)
   if(!modal) return
@@ -664,6 +833,7 @@ document.getElementById('clear-data-btn')?.addEventListener('click', () => {
   state.sheep = []
   state.history = []
   expandedPaddockId = null
+  expandedWeatherPaddocks.clear()
   ensureDefaultStal()
   addHistory('systeem', 'Alle gegevens gewist')
   localStorage.removeItem(KEY)
@@ -682,6 +852,9 @@ document.getElementById('upload-data-input')?.addEventListener('change', e => {
 
 document.getElementById('paddock-modal-close')?.addEventListener('click', () => closeModal('paddock-modal'))
 document.getElementById('paddock-modal-backdrop')?.addEventListener('click', () => closeModal('paddock-modal'))
+
+document.getElementById('paddock-edit-modal-close')?.addEventListener('click', closeEditPaddockModal)
+document.getElementById('paddock-edit-modal-backdrop')?.addEventListener('click', closeEditPaddockModal)
 
 document.getElementById('sheep-modal-close')?.addEventListener('click', () => closeModal('sheep-modal'))
 document.getElementById('sheep-modal-backdrop')?.addEventListener('click', () => closeModal('sheep-modal'))
@@ -720,11 +893,40 @@ document.getElementById('move-modal-form')?.addEventListener('submit', e => {
 document.getElementById('paddock-modal-form')?.addEventListener('submit', e => {
   e.preventDefault()
   const name = document.getElementById('paddock-modal-name').value.trim()
+  const postcode = document.getElementById('paddock-modal-postcode').value.trim()
   if(!name) return
-  state.paddocks.push({id:uid(), name, zones: []})
+  state.paddocks.push({id:uid(), name, postcode, zones: []})
   addHistory('weide', `Weide ${name} toegevoegd`)
   document.getElementById('paddock-modal-name').value = ''
+  document.getElementById('paddock-modal-postcode').value = ''
   save(); render(); closeModal('paddock-modal')
+})
+
+document.getElementById('paddock-edit-form')?.addEventListener('submit', e => {
+  e.preventDefault()
+  if(!activeEditPaddockId) return
+
+  const paddock = getPaddock(activeEditPaddockId)
+  if(!paddock) return
+
+  const nameInput = document.getElementById('paddock-edit-name')
+  const postcodeInput = document.getElementById('paddock-edit-postcode')
+  const nextName = nameInput ? nameInput.value.trim() : ''
+  const nextPostcode = postcodeInput ? postcodeInput.value.trim() : ''
+
+  const beforeName = paddock.name
+  const beforePostcode = paddock.postcode || ''
+
+  if(!isStalPaddock(paddock) && nextName){
+    paddock.name = nextName
+  }
+  paddock.postcode = nextPostcode
+
+  if(beforeName !== paddock.name || beforePostcode !== paddock.postcode){
+    addHistory('weide', `Weide bijgewerkt: ${beforeName} -> ${paddock.name}${beforePostcode !== paddock.postcode ? `, postcode ${beforePostcode || '-'} -> ${paddock.postcode || '-'}` : ''}`)
+  }
+
+  save(); render(); closeEditPaddockModal()
 })
 
 document.getElementById('sheep-modal-form')?.addEventListener('submit', e => {
@@ -903,6 +1105,7 @@ document.getElementById('zone-bulk-move-form')?.addEventListener('submit', e => 
   const targetPaddockId = document.getElementById('zone-bulk-move-target-paddock-modal').value
   const targetZoneId = document.getElementById('zone-bulk-move-target-zone-modal').value
   if(!targetPaddockId || !targetZoneId) return
+  if(targetPaddockId === pendingZoneBulkMove.sourcePaddockId && targetZoneId === pendingZoneBulkMove.sourceZoneId) return
   const sourcePaddock = getPaddock(pendingZoneBulkMove.sourcePaddockId)
   const sourceZone = getZone(pendingZoneBulkMove.sourcePaddockId, pendingZoneBulkMove.sourceZoneId)
   const sheepToMove = state.sheep.filter(s => s.paddockId === pendingZoneBulkMove.sourcePaddockId && s.zoneId === pendingZoneBulkMove.sourceZoneId)
@@ -980,6 +1183,27 @@ document.getElementById('paddock-list').addEventListener('click', e => {
     return
   }
 
+  const weatherToggleButton = e.target.closest('.weather-toggle-button')
+  if(weatherToggleButton){
+    const paddockId = weatherToggleButton.dataset.paddockId
+    if(!paddockId) return
+    if(expandedWeatherPaddocks.has(paddockId)){
+      expandedWeatherPaddocks.delete(paddockId)
+    } else {
+      expandedWeatherPaddocks.add(paddockId)
+    }
+    render()
+    return
+  }
+
+  const editPaddockButton = e.target.closest('.paddock-edit-button')
+  if(editPaddockButton){
+    const paddockId = editPaddockButton.dataset.paddockId
+    if(!paddockId) return
+    openEditPaddockModal(paddockId)
+    return
+  }
+
   const deletePaddockButton = e.target.closest('.paddock-delete-button')
   if(deletePaddockButton){
     const paddockId = deletePaddockButton.dataset.paddockId
@@ -996,6 +1220,7 @@ document.getElementById('paddock-list').addEventListener('click', e => {
     }
     state.paddocks = state.paddocks.filter(p => p.id !== paddockId)
     if(expandedPaddockId === paddockId) expandedPaddockId = null
+    expandedWeatherPaddocks.delete(paddockId)
     addHistory('weide', `Weide ${paddock.name} verwijderd`)
     save(); render()
     return
