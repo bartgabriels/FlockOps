@@ -1245,9 +1245,28 @@ form button{
   line-height:1.35;
 }
 
+.modal-panel--wide{
+  max-width:360px;
+}
+
 .modal-panel h2{
   font-size:1.15rem;
   line-height:1.2;
+}
+
+.modal-copy{
+  margin:0 0 14px;
+  color:var(--text-muted);
+}
+
+.modal-action-list{
+  display:grid;
+  gap:10px;
+}
+
+.modal-action-list .section-button{
+  width:100%;
+  justify-content:center;
 }
 
 .modal-close{

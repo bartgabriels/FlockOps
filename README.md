@@ -73,12 +73,12 @@ De hoofdinterface gebruikt 3 tabs om drukte te verminderen:
 ### Werkstromen: Verjaardagen, Scheren en Injecties
 - **Geboortedatum**: Stel een geboortedatum in per schaap om automatisch de leeftijd te berekenen en weer te geven.
 - **Scheren (knippen wol)**: Registreer de laatste scheerdate en zichtbare kalender voor volgende scheerbeurt.
-  - Klik op het schaarknop op de schaapkaart of in de zoneweergave.
+  - Klik op de schaarknop op de schaapkaart of op weideniveau voor een bulkactie.
   - Volg de workflow in de modal om de datum in te stellen.
 - **Injecties**: Beheer injectiedatums en volgende injectieschema's.
   - Klik op het spuitknop om een injectie te registreren (laatste datum + volgende datum).
   - Beheer zowel individuele schaapinjecties als bulkinjecties per weide.
-  - Schapen tonen beide: laatste injectiedatum en geplande volgende injectiedatum.
+  - Schapen tonen beide: laatste injectiedatum met product en geplande volgende injectiedatum.
   - Workflows werken zowel op individuele schaapniveau als op weideniveau (bulkacties).
 
 ### Slimme verplaats- en verwijderlogica
@@ -107,6 +107,8 @@ De hoofdinterface gebruikt 3 tabs om drukte te verminderen:
 - Gegevens exporteren naar JSON.
 - Gegevens importeren vanuit JSON.
 - Alle gegevens wissen met bevestiging.
+- Als er nog geen configuratie aanwezig is, toont de app bij het opstarten een popup met 3 keuzes: **Start from Zero**, **Upload a config file** of **Upload dummy data**.
+- De optie **Upload dummy data** probeert eerst het lokale [dummy-data.json](dummy-data.json) te laden en valt daarna terug op de GitHub raw-versie.
 - Bij het sluiten van tabblad of browservenster probeert de app automatisch een JSON-configuratie te downloaden (best effort auto-save).
 - Opmerking: sommige browsers blokkeren downloads tijdens sluiten als er geen recente gebruikersactie was.
 
@@ -114,8 +116,8 @@ De hoofdinterface gebruikt 3 tabs om drukte te verminderen:
 
 1. Open https://bartgabriels.github.io/FlockOps/ in een moderne browser.
 2. Kies je taal met de dropdown bovenaan (Nederlands/English/Français).
-3. Gebruik de tabs om tussen weides/zones, schapen en historiek te wisselen.
-4. Test snel met [dummy-data.json](dummy-data.json) via de importknop.
+3. Als de opslag leeg is, kies je bij het opstarten tussen **Start from Zero**, **Upload a config file** of **Upload dummy data**.
+4. Gebruik de tabs om tussen weides/zones, schapen en historiek te wisselen.
 5. Voeg weides, zones en schapen toe.
 6. Gebruik de modals om te verplaatsen, bewerken of verwijderen.
 7. Data wordt automatisch opgeslagen in de browser.
@@ -195,12 +197,12 @@ The main interface uses 3 tabs to reduce visual clutter:
 ### Workflows: Birthdays, Shearing and Injections
 - **Birth Date**: Set a birth date per sheep to automatically calculate and display the sheep's age.
 - **Shearing (wool trimming)**: Record the last shearing date and track the next shearing schedule.
-  - Click the scissors button on the sheep card or in the zone view.
+  - Click the scissors button on the sheep card or at paddock level for a bulk action.
   - Follow the workflow in the modal to set the date.
 - **Injections**: Manage injection dates and next injection schedules.
   - Click the syringe button to register an injection (last date + next date).
   - Manage both individual sheep injections and bulk injections per paddock.
-  - Sheep display both: last injection date and planned next injection date.
+  - Sheep display both: last injection date with product and planned next injection date.
   - Workflows work at both individual sheep level and paddock level (bulk actions).
 
 ### Smart move and delete logic
@@ -229,6 +231,8 @@ The main interface uses 3 tabs to reduce visual clutter:
 - Export data to JSON.
 - Import data from JSON.
 - Clear all data with confirmation.
+- If no configuration exists yet, the app opens with a popup offering 3 choices: **Start from Zero**, **Upload a config file**, or **Upload dummy data**.
+- The **Upload dummy data** option first tries the local [dummy-data.json](dummy-data.json) file and then falls back to the GitHub raw version.
 - When closing the tab or browser window, the app attempts to automatically download a JSON config backup (best-effort auto-save).
 - Note: some browsers block downloads during close/unload when there was no recent user interaction.
 
@@ -236,8 +240,8 @@ The main interface uses 3 tabs to reduce visual clutter:
 
 1. Open https://bartgabriels.github.io/FlockOps/ in a modern browser.
 2. Choose your language with the dropdown at the top (Nederlands/English/Français).
-3. Use tabs to switch between paddocks/zones, sheep, and history.
-4. Quick-test import with [dummy-data.json](dummy-data.json).
+3. If storage is empty, choose **Start from Zero**, **Upload a config file**, or **Upload dummy data** in the startup popup.
+4. Use tabs to switch between paddocks/zones, sheep, and history.
 5. Add paddocks, zones, and sheep.
 6. Use modals to move, edit, or delete.
 7. Data is automatically saved in your browser.
@@ -336,6 +340,8 @@ L'interface principale utilise 3 onglets pour reduire l'encombrement visuel :
 - Export des donnees en JSON.
 - Import des donnees depuis JSON.
 - Effacement de toutes les donnees avec confirmation.
+- Si aucune configuration n'existe encore, l'application affiche au demarrage une popup avec 3 choix : **Start from Zero**, **Upload a config file** ou **Upload dummy data**.
+- L'option **Upload dummy data** essaie d'abord de charger le fichier local [dummy-data.json](dummy-data.json), puis bascule sur la version raw de GitHub si necessaire.
 - Lors de la fermeture de l'onglet ou de la fenetre du navigateur, l'application tente de telecharger automatiquement une sauvegarde JSON (auto-save best effort).
 - Remarque : certains navigateurs bloquent les telechargements a la fermeture s'il n'y a pas eu d'interaction utilisateur recente.
 
@@ -343,8 +349,8 @@ L'interface principale utilise 3 onglets pour reduire l'encombrement visuel :
 
 1. Ouvrez https://bartgabriels.github.io/FlockOps/ dans un navigateur moderne.
 2. Choisissez votre langue en haut de la page (Nederlands/English/Francais).
-3. Utilisez les onglets pour basculer entre paturages/zones, moutons et historique.
-4. Testez rapidement l'import avec [dummy-data.json](dummy-data.json).
+3. Si le stockage est vide, choisissez **Start from Zero**, **Upload a config file** ou **Upload dummy data** dans la popup de demarrage.
+4. Utilisez les onglets pour basculer entre paturages/zones, moutons et historique.
 5. Ajoutez des paturages, des zones et des moutons.
 6. Utilisez les fenetres modales pour deplacer, modifier ou supprimer.
 7. Les donnees sont enregistrees automatiquement dans le navigateur.
@@ -374,4 +380,4 @@ Le dossier [server](server) est present dans le depot, mais le frontend a la rac
 
 ---
 
-**Last updated**: June 2026 | **Version**: 2.4 (NL/EN/FR + autosave on close + portrait cards + weather badge + earmarks)
+**Last updated**: June 2026 | **Version**: 2.5 (startup popup + dummy data fallback + autosave on close + weather badge)

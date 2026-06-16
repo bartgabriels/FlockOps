@@ -15,10 +15,13 @@ const PAYPAL_BILLING_CONFIG = {
 let paypalSdkPromise = null
 let pendingDeleteConfirm = null
 let pendingInjectionPaddockId = null
+let pendingInjectionZoneId = null
 let pendingShearingPaddockId = null
+let pendingShearingZoneId = null
 let pendingInjectionSheepId = null
 let pendingShearingSheepId = null
 let hasTriggeredExitDownload = false
+let reopenEmptyStorageModalAfterUpload = false
 
 const SEO_BY_LANG = {
   nl: {
@@ -81,6 +84,11 @@ const translations = {
     'ui.save': 'Opslaan',
     'ui.upload': 'Upload',
     'ui.clear': 'Wissen',
+    'onboarding.empty.title': 'Begin met je kuddebeheer',
+    'onboarding.empty.description': 'Er is nog geen opgeslagen configuratie gevonden. Kies hoe je wilt starten.',
+    'onboarding.empty.startZero': 'Start from Zero',
+    'onboarding.empty.uploadConfig': 'Upload a config file',
+    'onboarding.empty.uploadDummy': 'Upload dummy data',
     'ui.language': 'Taal',
     'tab.paddocksZones': 'Weides en zones',
     'tab.sheep': 'Schapen',
@@ -299,6 +307,11 @@ const translations = {
     'ui.save': 'Save',
     'ui.upload': 'Upload',
     'ui.clear': 'Clear',
+    'onboarding.empty.title': 'Start managing your flock',
+    'onboarding.empty.description': 'No saved configuration was found yet. Choose how you want to begin.',
+    'onboarding.empty.startZero': 'Start from Zero',
+    'onboarding.empty.uploadConfig': 'Upload a config file',
+    'onboarding.empty.uploadDummy': 'Upload dummy data',
     'ui.language': 'Language',
     'tab.paddocksZones': 'Paddocks and zones',
     'tab.sheep': 'Sheep',
@@ -520,6 +533,11 @@ const translationsFr = {
   'ui.save': 'Enregistrer',
   'ui.upload': 'Importer',
   'ui.clear': 'Effacer',
+  'onboarding.empty.title': 'Commencez la gestion de votre troupeau',
+  'onboarding.empty.description': 'Aucune configuration enregistrée n\'a encore été trouvée. Choisissez comment démarrer.',
+  'onboarding.empty.startZero': 'Start from Zero',
+  'onboarding.empty.uploadConfig': 'Upload a config file',
+  'onboarding.empty.uploadDummy': 'Upload dummy data',
   'ui.language': 'Langue',
   'ui.add': 'Ajouter',
   'tab.paddocksZones': 'Pâturages et zones',
@@ -973,6 +991,11 @@ function applyStaticTranslations(){
   setText('download-data-btn', t('ui.save'))
   setText('upload-data-btn', t('ui.upload'))
   setText('clear-data-btn', t('ui.clear'))
+  setText('empty-storage-modal-title', t('onboarding.empty.title'))
+  setText('empty-storage-modal-description', t('onboarding.empty.description'))
+  setText('empty-storage-start-zero', t('onboarding.empty.startZero'))
+  setText('empty-storage-upload-config', t('onboarding.empty.uploadConfig'))
+  setText('empty-storage-upload-dummy', t('onboarding.empty.uploadDummy'))
   setText('tab-paddocks-btn', t('tab.paddocksZones'))
   setText('tab-sheep-btn', t('tab.sheep'))
   setText('tab-history-btn', t('tab.history'))
@@ -1316,6 +1339,66 @@ function ensureDefaultStal(){
   })
 }
 
+function hydrateState(saved){
+  state.paddocks = Array.isArray(saved?.paddocks) ? saved.paddocks.map(p => ({
+    id: p.id,
+    name: p.name,
+    postcode: typeof p.postcode === 'string' ? p.postcode : '',
+    zones: Array.isArray(p.zones) ? p.zones.map(z => ({
+      id: z.id,
+      name: z.name,
+      area: Number.isFinite(Number(z.area)) ? Number(z.area) : null,
+      perimeter: Number.isFinite(Number(z.perimeter)) ? Number(z.perimeter) : null,
+      notes: typeof z.notes === 'string' ? z.notes.trim() : '',
+      emptySince: z.emptySince ?? Date.now()
+    })) : []
+  })) : []
+  state.sheep = Array.isArray(saved?.sheep) ? saved.sheep.map(s => ({
+    id: s.id,
+    tag: s.tag,
+    earmark: typeof s.earmark === 'string' && s.earmark.trim() ? s.earmark.trim() : null,
+    birthDate: typeof s.birthDate === 'string' && s.birthDate.trim() ? s.birthDate.trim() : null,
+    injections: Array.isArray(s.injections) ? s.injections.map(i => ({
+      id: i.id || uid(),
+      date: typeof i.date === 'string' ? i.date : '',
+      product: typeof i.product === 'string' ? i.product : '',
+      repeatDate: typeof i.repeatDate === 'string' ? i.repeatDate : ''
+    })) : [],
+    shearings: Array.isArray(s.shearings) ? s.shearings.map(sh => ({
+      id: sh.id || uid(),
+      date: typeof sh.date === 'string' ? sh.date : ''
+    })) : [],
+    gender: s.gender === 'male' || s.gender === 'female' ? s.gender : null,
+    motherId: s.motherId ?? null,
+    fatherId: s.fatherId ?? null,
+    paddockId: s.paddockId,
+    zoneId: s.zoneId ?? null,
+    lastUpdated: s.lastUpdated ?? Date.now()
+  })) : []
+  state.history = Array.isArray(saved?.history) ? saved.history.map(h => ({
+    id: h.id || uid(),
+    ts: h.ts ?? Date.now(),
+    entity: h.entity || 'systeem',
+    message: h.message || ''
+  })) : []
+  ensureDefaultStal()
+  collapseAllPaddocks()
+  const removedEarmarks = dedupeEarmarks()
+  updateZoneEmptyStates()
+  return removedEarmarks
+}
+
+function isOnboardingEmptyState(){
+  if(state.sheep.length || state.paddocks.length !== 1) return false
+  const [paddock] = state.paddocks
+  if(!isStalPaddock(paddock) || paddock.postcode || paddock.zones.length !== 1) return false
+  const [zone] = paddock.zones
+  return isStalZone(paddock, zone)
+    && !zone.notes
+    && (zone.area === null || zone.area === undefined)
+    && (zone.perimeter === null || zone.perimeter === undefined)
+}
+
 function collapseAllPaddocks(){
   collapsedPaddockIds.clear()
   state.paddocks.forEach(paddock => collapsedPaddockIds.add(paddock.id))
@@ -1324,53 +1407,10 @@ function collapseAllPaddocks(){
 function load(){
   const raw = localStorage.getItem(KEY)
   if(raw){
-    const saved = JSON.parse(raw)
-    state.paddocks = Array.isArray(saved.paddocks) ? saved.paddocks.map(p => ({
-      id: p.id,
-      name: p.name,
-      postcode: typeof p.postcode === 'string' ? p.postcode : '',
-      zones: Array.isArray(p.zones) ? p.zones.map(z => ({
-        id: z.id,
-        name: z.name,
-        area: Number.isFinite(Number(z.area)) ? Number(z.area) : null,
-        perimeter: Number.isFinite(Number(z.perimeter)) ? Number(z.perimeter) : null,
-        notes: typeof z.notes === 'string' ? z.notes.trim() : '',
-        emptySince: z.emptySince ?? Date.now()
-      })) : []
-    })) : []
-    state.sheep = Array.isArray(saved.sheep) ? saved.sheep.map(s => ({
-      id: s.id,
-      tag: s.tag,
-      earmark: typeof s.earmark === 'string' && s.earmark.trim() ? s.earmark.trim() : null,
-      birthDate: typeof s.birthDate === 'string' && s.birthDate.trim() ? s.birthDate.trim() : null,
-      injections: Array.isArray(s.injections) ? s.injections.map(i => ({
-        id: i.id || uid(),
-        date: typeof i.date === 'string' ? i.date : '',
-        product: typeof i.product === 'string' ? i.product : '',
-        repeatDate: typeof i.repeatDate === 'string' ? i.repeatDate : ''
-      })) : [],
-      shearings: Array.isArray(s.shearings) ? s.shearings.map(sh => ({
-        id: sh.id || uid(),
-        date: typeof sh.date === 'string' ? sh.date : ''
-      })) : [],
-      gender: s.gender === 'male' || s.gender === 'female' ? s.gender : null,
-      motherId: s.motherId ?? null,
-      fatherId: s.fatherId ?? null,
-      paddockId: s.paddockId,
-      zoneId: s.zoneId ?? null,
-      lastUpdated: s.lastUpdated ?? Date.now()
-    })) : []
-    state.history = Array.isArray(saved.history) ? saved.history.map(h => ({
-      id: h.id || uid(),
-      ts: h.ts ?? Date.now(),
-      entity: h.entity || 'systeem',
-      message: h.message || ''
-    })) : []
+    hydrateState(JSON.parse(raw))
+    return
   }
-  ensureDefaultStal()
-  collapseAllPaddocks()
-  dedupeEarmarks()
-  updateZoneEmptyStates()
+  hydrateState(null)
 }
 
 function save(){
@@ -1429,14 +1469,14 @@ function latestShearingRecord(sheep){
   if(!Array.isArray(sheep.shearings)) return null
   const valid = sheep.shearings.filter(sh => typeof sh.date === 'string' && sh.date)
   if(!valid.length) return null
-  return valid.reduce((latest, item) => (item.date > latest.date ? item : latest))
+  return valid.reduce((latest, item) => (item.date >= latest.date ? item : latest))
 }
 
 function latestInjectionRecord(sheep){
   if(!Array.isArray(sheep.injections)) return null
   const valid = sheep.injections.filter(i => typeof i.date === 'string' && i.date)
   if(!valid.length) return null
-  return valid.reduce((latest, item) => (item.date > latest.date ? item : latest))
+  return valid.reduce((latest, item) => (item.date >= latest.date ? item : latest))
 }
 
 function nextInjectionRecord(sheep){
@@ -1444,7 +1484,7 @@ function nextInjectionRecord(sheep){
   const today = todayIso()
   const valid = sheep.injections.filter(i => typeof i.repeatDate === 'string' && i.repeatDate && i.repeatDate >= today)
   if(!valid.length) return null
-  return valid.reduce((next, item) => (item.repeatDate < next.repeatDate ? item : next))
+  return valid.reduce((next, item) => (item.repeatDate <= next.repeatDate ? item : next))
 }
 
 function formatDate(timestamp){
@@ -1543,62 +1583,69 @@ function importDataFile(file){
     try {
       const parsed = JSON.parse(reader.result)
       if(!parsed || typeof parsed !== 'object') throw new Error('Ongeldig bestand')
-      state.paddocks = Array.isArray(parsed.paddocks) ? parsed.paddocks.map(p => ({
-        id: p.id,
-        name: p.name,
-        postcode: typeof p.postcode === 'string' ? p.postcode : '',
-        zones: Array.isArray(p.zones) ? p.zones.map(z => ({
-          id: z.id,
-          name: z.name,
-          area: Number.isFinite(Number(z.area)) ? Number(z.area) : null,
-          perimeter: Number.isFinite(Number(z.perimeter)) ? Number(z.perimeter) : null,
-          notes: typeof z.notes === 'string' ? z.notes.trim() : '',
-          emptySince: z.emptySince ?? Date.now()
-        })) : []
-      })) : []
-      state.sheep = Array.isArray(parsed.sheep) ? parsed.sheep.map(s => ({
-        id: s.id,
-        tag: s.tag,
-        earmark: typeof s.earmark === 'string' && s.earmark.trim() ? s.earmark.trim() : null,
-        birthDate: typeof s.birthDate === 'string' && s.birthDate.trim() ? s.birthDate.trim() : null,
-        injections: Array.isArray(s.injections) ? s.injections.map(i => ({
-          id: i.id || uid(),
-          date: typeof i.date === 'string' ? i.date : '',
-          product: typeof i.product === 'string' ? i.product : '',
-          repeatDate: typeof i.repeatDate === 'string' ? i.repeatDate : ''
-        })) : [],
-        shearings: Array.isArray(s.shearings) ? s.shearings.map(sh => ({
-          id: sh.id || uid(),
-          date: typeof sh.date === 'string' ? sh.date : ''
-        })) : [],
-        gender: s.gender === 'male' || s.gender === 'female' ? s.gender : null,
-        motherId: s.motherId ?? null,
-        fatherId: s.fatherId ?? null,
-        paddockId: s.paddockId,
-        zoneId: s.zoneId ?? null,
-        lastUpdated: s.lastUpdated ?? Date.now()
-      })) : []
-      state.history = Array.isArray(parsed.history) ? parsed.history.map(h => ({
-        id: h.id || uid(),
-        ts: h.ts ?? Date.now(),
-        entity: h.entity || 'systeem',
-        message: h.message || ''
-      })) : []
-      ensureDefaultStal()
-      collapseAllPaddocks()
-      const removedEarmarks = dedupeEarmarks()
-      updateZoneEmptyStates()
+      const removedEarmarks = hydrateState(parsed)
       if(removedEarmarks > 0){
         addHistory('systeem', t('history.import.duplicates', { count: removedEarmarks }))
       }
       addHistory('systeem', t('history.import.success'))
+      reopenEmptyStorageModalAfterUpload = false
       save(); render()
       alert(t('alert.importSuccess'))
     } catch (err) {
+      const shouldReopenModal = reopenEmptyStorageModalAfterUpload && isOnboardingEmptyState()
+      reopenEmptyStorageModalAfterUpload = false
+      if(shouldReopenModal) openModal('empty-storage-modal')
       alert(t('alert.importError', { error: err.message }))
     }
   }
   reader.readAsText(file)
+}
+
+async function loadDummyData(){
+  try {
+    const sources = [
+      new URL('dummy-data.json', window.location.href).toString(),
+      'https://raw.githubusercontent.com/bartgabriels/FlockOps/main/dummy-data.json'
+    ]
+    let parsed = null
+    let lastError = null
+
+    for(const source of sources){
+      try {
+        const response = await fetch(source, { cache: 'no-store' })
+        if(!response.ok) throw new Error(`HTTP ${response.status}`)
+        parsed = await response.json()
+        break
+      } catch (error) {
+        lastError = error
+      }
+    }
+
+    if(!parsed) throw lastError || new Error('Failed to fetch')
+    if(!parsed || typeof parsed !== 'object') throw new Error('Ongeldig bestand')
+    const removedEarmarks = hydrateState(parsed)
+    if(removedEarmarks > 0){
+      addHistory('systeem', t('history.import.duplicates', { count: removedEarmarks }))
+    }
+    addHistory('systeem', t('history.import.success'))
+    save(); render(); closeModal('empty-storage-modal')
+    alert(t('alert.importSuccess'))
+  } catch (error) {
+    alert(t('alert.importError', { error: error.message }))
+  }
+}
+
+function triggerUploadDataPicker(reopenModalOnCancel = false){
+  const input = document.getElementById('upload-data-input')
+  if(!input) return
+  reopenEmptyStorageModalAfterUpload = reopenModalOnCancel
+  input.click()
+}
+
+function maybeOpenEmptyStorageModal(){
+  if(isOnboardingEmptyState()){
+    openModal('empty-storage-modal')
+  }
 }
 
 function render(){
@@ -2366,10 +2413,32 @@ function renderPaddockSheepSelection(containerId, inputName, paddockId){
   `).join('')
 }
 
-function openPaddockInjectionModal(paddockId){
+function renderZoneSheepSelection(containerId, inputName, paddockId, zoneId){
+  const container = document.getElementById(containerId)
+  if(!container) return
+
+  const sheepInZone = state.sheep
+    .filter(s => s.paddockId === paddockId && s.zoneId === zoneId)
+    .sort((a, b) => a.tag.localeCompare(b.tag, localeTag()))
+
+  if(!sheepInZone.length){
+    container.innerHTML = `<div class="empty">${t('sheep.empty')}</div>`
+    return
+  }
+
+  container.innerHTML = sheepInZone.map(sheep => `
+    <label class="modal-sheep-option" for="${inputName}-${sheep.id}">
+      <input id="${inputName}-${sheep.id}" type="checkbox" name="${inputName}" value="${sheep.id}" checked>
+      <span>${sheep.tag}</span>
+    </label>
+  `).join('')
+}
+
+function openPaddockInjectionModal(paddockId, zoneId = null){
   const paddock = getPaddock(paddockId)
   if(!paddock) return
   pendingInjectionPaddockId = paddockId
+  pendingInjectionZoneId = zoneId || null
 
   const paddockNameEl = document.getElementById('paddock-injection-paddock-name')
   const dateInput = document.getElementById('paddock-injection-date')
@@ -2377,7 +2446,8 @@ function openPaddockInjectionModal(paddockId){
   const repeatDateInput = document.getElementById('paddock-injection-repeat-date')
   const noRepeatInput = document.getElementById('paddock-injection-no-repeat')
 
-  if(paddockNameEl) paddockNameEl.textContent = paddock.name
+  const displayName = zoneId ? zoneName(paddockId, zoneId) : paddock.name
+  if(paddockNameEl) paddockNameEl.textContent = displayName
   if(dateInput) dateInput.value = todayIso()
   if(productInput) productInput.value = ''
   if(repeatDateInput) repeatDateInput.value = oneYearFromTodayIso()
@@ -2386,33 +2456,45 @@ function openPaddockInjectionModal(paddockId){
     repeatDateInput.disabled = false
     repeatDateInput.required = true
   }
-  renderPaddockSheepSelection('paddock-injection-sheep-list', 'paddock-injection-sheep', paddockId)
+  if(zoneId){
+    renderZoneSheepSelection('paddock-injection-sheep-list', 'paddock-injection-sheep', paddockId, zoneId)
+  } else {
+    renderPaddockSheepSelection('paddock-injection-sheep-list', 'paddock-injection-sheep', paddockId)
+  }
 
   openModal('paddock-injection-modal')
 }
 
 function closePaddockInjectionModal(){
   pendingInjectionPaddockId = null
+  pendingInjectionZoneId = null
   closeModal('paddock-injection-modal')
 }
 
-function openPaddockShearingModal(paddockId){
+function openPaddockShearingModal(paddockId, zoneId = null){
   const paddock = getPaddock(paddockId)
   if(!paddock) return
   pendingShearingPaddockId = paddockId
+  pendingShearingZoneId = zoneId || null
 
   const paddockNameEl = document.getElementById('paddock-shearing-paddock-name')
   const dateInput = document.getElementById('paddock-shearing-date')
 
-  if(paddockNameEl) paddockNameEl.textContent = paddock.name
+  const displayName = zoneId ? zoneName(paddockId, zoneId) : paddock.name
+  if(paddockNameEl) paddockNameEl.textContent = displayName
   if(dateInput) dateInput.value = todayIso()
-  renderPaddockSheepSelection('paddock-shearing-sheep-list', 'paddock-shearing-sheep', paddockId)
+  if(zoneId){
+    renderZoneSheepSelection('paddock-shearing-sheep-list', 'paddock-shearing-sheep', paddockId, zoneId)
+  } else {
+    renderPaddockSheepSelection('paddock-shearing-sheep-list', 'paddock-shearing-sheep', paddockId)
+  }
 
   openModal('paddock-shearing-modal')
 }
 
 function closePaddockShearingModal(){
   pendingShearingPaddockId = null
+  pendingShearingZoneId = null
   closeModal('paddock-shearing-modal')
 }
 
@@ -2520,7 +2602,7 @@ window.addEventListener('pagehide', handleExitDownload)
 window.addEventListener('beforeunload', handleExitDownload)
 
 document.getElementById('upload-data-btn')?.addEventListener('click', () => {
-  document.getElementById('upload-data-input')?.click()
+  triggerUploadDataPicker(false)
 })
 
 document.getElementById('clear-data-btn')?.addEventListener('click', () => {
@@ -2532,18 +2614,36 @@ document.getElementById('clear-data-btn')?.addEventListener('click', () => {
   expandedWeatherPaddocks.clear()
   ensureDefaultStal()
   collapseAllPaddocks()
-  addHistory('systeem', t('history.clear'))
   localStorage.removeItem(KEY)
-  save()
   render()
+  maybeOpenEmptyStorageModal()
 })
 
 document.getElementById('upload-data-input')?.addEventListener('change', e => {
   const files = e.target.files
   if(files && files.length){
+    closeModal('empty-storage-modal')
     importDataFile(files[0])
+  } else if(reopenEmptyStorageModalAfterUpload && isOnboardingEmptyState()){
+    openModal('empty-storage-modal')
   }
+  reopenEmptyStorageModalAfterUpload = false
   e.target.value = ''
+})
+
+document.getElementById('empty-storage-start-zero')?.addEventListener('click', () => {
+  save()
+  render()
+  closeModal('empty-storage-modal')
+})
+
+document.getElementById('empty-storage-upload-config')?.addEventListener('click', () => {
+  closeModal('empty-storage-modal')
+  triggerUploadDataPicker(true)
+})
+
+document.getElementById('empty-storage-upload-dummy')?.addEventListener('click', () => {
+  loadDummyData()
 })
 
 
@@ -2694,16 +2794,17 @@ document.getElementById('paddock-injection-form')?.addEventListener('submit', e 
     sheep.lastUpdated = Date.now()
   })
 
+  const displayLocation = pendingInjectionZoneId ? zoneName(pendingInjectionPaddockId, pendingInjectionZoneId) : paddock.name
   if(noRepeat){
     addHistory('injectie', t('history.injection.appliedNoRepeat', {
-      paddock: paddock.name,
+      paddock: displayLocation,
       product,
       date: formatBirthDate(date),
       count: sheepInPaddock.length
     }))
   } else {
     addHistory('injectie', t('history.injection.applied', {
-      paddock: paddock.name,
+      paddock: displayLocation,
       product,
       date: formatBirthDate(date),
       repeatDate: formatBirthDate(repeatDate),
@@ -2737,8 +2838,9 @@ document.getElementById('paddock-shearing-form')?.addEventListener('submit', e =
     sheep.lastUpdated = Date.now()
   })
 
+  const displayLocation = pendingShearingZoneId ? zoneName(pendingShearingPaddockId, pendingShearingZoneId) : paddock.name
   addHistory('scheren', t('history.shearing.applied', {
-    paddock: paddock.name,
+    paddock: displayLocation,
     date: formatBirthDate(shearingDate),
     count: sheepInPaddock.length
   }))
@@ -3213,11 +3315,29 @@ document.getElementById('paddock-list').addEventListener('click', e => {
     return
   }
 
+  const zoneInjectionButton = e.target.closest('.zone-injection-button')
+  if(zoneInjectionButton){
+    const paddockId = zoneInjectionButton.dataset.paddockId
+    const zoneId = zoneInjectionButton.dataset.zoneId
+    if(!paddockId || !zoneId) return
+    openPaddockInjectionModal(paddockId, zoneId)
+    return
+  }
+
   const paddockShearingButton = e.target.closest('.paddock-shearing-button')
   if(paddockShearingButton){
     const paddockId = paddockShearingButton.dataset.paddockId
     if(!paddockId) return
     openPaddockShearingModal(paddockId)
+    return
+  }
+
+  const zoneShearingButton = e.target.closest('.zone-shearing-button')
+  if(zoneShearingButton){
+    const paddockId = zoneShearingButton.dataset.paddockId
+    const zoneId = zoneShearingButton.dataset.zoneId
+    if(!paddockId || !zoneId) return
+    openPaddockShearingModal(paddockId, zoneId)
     return
   }
 
@@ -3328,6 +3448,7 @@ if(document.readyState === 'loading'){
     applyStaticTranslations()
     load()
     render()
+    maybeOpenEmptyStorageModal()
   })
 } else {
   // DOM is already loaded (e.g., when script is deferred or at end of body)
@@ -3336,4 +3457,5 @@ if(document.readyState === 'loading'){
   applyStaticTranslations()
   load()
   render()
+  maybeOpenEmptyStorageModal()
 }
