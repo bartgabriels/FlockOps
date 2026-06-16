@@ -1,103 +1,102 @@
 # Schapentracker
 
-A lightweight browser-based sheep management application for tracking sheep locations across fields and zones. Built with vanilla HTML, CSS, and JavaScript—no server or dependencies required.
+Schapentracker is een lichte, browsergebaseerde applicatie om schapen te beheren over weides en zones. De app draait volledig in HTML, CSS en JavaScript (zonder verplichte backend) en bewaart data lokaal in je browser.
 
-## Features
+## Functionaliteiten
 
-### Field Management
-- **Add/Remove fields** — Create custom paddocks (weides) to organize your sheep areas
-- **Default Stal field** — A protected default "Stal" (barn) field that cannot be deleted
-- **Zone support** — Each field can have multiple zones for granular location tracking
-- **Minimum enforcement** — Every field must maintain at least 1 zone
+### Weides
+- Weides toevoegen, bewerken en verwijderen.
+- Beschermde standaardweide Stal die niet verwijderd kan worden.
+- Postcode per weide (optioneel).
+- Oppervlakte op weideniveau wordt automatisch berekend als som van alle zone-oppervlaktes.
 
-### Sheep Tracking
-- **Add/Remove sheep** — Register individual sheep with unique tags
-- **Assign to locations** — Place sheep in specific fields and zones
-- **Move sheep** — Quickly relocate sheep between fields and zones with modal dialogs
-- **Clickable sheep names** — Click any sheep name in a zone to open the move dialog
-- **Track timestamps** — Automatic last-modification tracking for each sheep
+### Zones
+- Meerdere zones per weide.
+- Zones toevoegen, bewerken en verwijderen.
+- Per zone kan je Oppervlakte (m2) en Omtrek (m) bijhouden.
+- Een weide moet altijd minstens 1 zone behouden.
+- Beschermde Stal-zone binnen de Stal-weide.
 
-### Smart Workflows
-- **Auto-select zones** — When selecting a field with only 1 zone, it auto-selects automatically
-- **Submit button state** — The submit button is disabled until a zone is selected (if multiple zones exist)
-- **Auto-move on deletion** — When deleting a zone or field with a single target location, sheep move automatically without confirmation
-- **Forced reassignment** — Deleting zones/fields with multiple target options presents a confirmation modal
-- **Stal protection** — The default Stal field and Stal zone cannot be deleted
+### Schapen
+- Schapen toevoegen, hernoemen, verplaatsen en verwijderen.
+- Schapen kunnen aan een specifieke weide en zone gekoppeld worden.
+- Laatste wijzigingsdatum per schaap wordt bijgehouden.
+- Klik op een schaapnaam in een zone om meteen het verplaatsvenster te openen.
 
-### Data Management
-- **Local storage** — All data persists in the browser using `localStorage` (key: `schapentracker:data`)
-- **Export data** — Download your entire database as a JSON file
-- **Import data** — Upload previously exported JSON files to restore data
-- **Clear data** — Wipe all data with a confirmation prompt
+### Slimme verplaats- en verwijderlogica
+- Automatische zonekeuze wanneer er maar 1 geldige doelzone bestaat.
+- Submit-knoppen blijven uitgeschakeld tot een geldige zone gekozen is.
+- Bij verwijderen van zone/weide met schapen:
+  - automatische verplaatsing als er exact 1 geldig doel is,
+  - anders een modal om een doelzone te kiezen.
+- Bulkactie op zones: Verplaats alle dieren.
 
-### User Interface
-- **Responsive layout** — Works on desktop and mobile devices
-- **Expandable fields** — Click any field name to expand/collapse its zones
-- **Visual feedback** — Zone status shows "Occupied" or "Empty since X days"
-- **Organized sheep display** — Sheep names displayed inline within zone cards with grass and barn backgrounds
+### Historiek
+- Alle belangrijke acties worden gelogd (toevoegen, bewerken, verwijderen, verplaatsen, import, wissen).
+- Historiek is persistent en zichtbaar in de UI.
+- Export bevat maximaal de 100 meest recente historiekitems.
 
-## Getting Started
+### Weer per weide
+- 3-daagse weersvoorspelling op basis van postcode.
+- Ondersteuning voor Belgische en Nederlandse postcodes.
+- Forecast is in- en uitklapbaar per weide.
+- Caching van weersdata voor performantie.
 
-1. Open `index.html` in any modern web browser
-2. Start adding fields and sheep
-3. Use the modals to manage locations and movements
-4. Data saves automatically to browser storage
+### Databeheer
+- Lokale opslag via localStorage onder sleutel schapentracker:data.
+- Gegevens exporteren naar JSON.
+- Gegevens importeren vanuit JSON.
+- Alle gegevens wissen met bevestiging.
 
-## Usage
+## Gebruik
 
-### Adding a Field
-1. Click the `+` button in the "Weides" section
-2. Enter a field name
-3. Click "Toevoegen" to create
+1. Open [index.html](index.html) in een moderne browser.
+2. Voeg weides, zones en schapen toe.
+3. Gebruik de modals om te verplaatsen, bewerken of verwijderen.
+4. Data wordt automatisch opgeslagen in de browser.
 
-### Adding a Sheep
-1. Click the `+` button in the "Schapen" section
-2. Enter a sheep tag/identifier
-3. Select a field and zone (zone auto-selects if only 1 available)
-4. Click "Toevoegen" to add
+## Belangrijke schermen en acties
 
-### Creating Zones
-1. Expand a field by clicking its name
-2. Click the `+` button in the zone grid
-3. Enter a zone name
-4. Click "Toevoegen" to create
+### Weide toevoegen
+1. Klik op + bij Weides.
+2. Vul naam (en optioneel postcode) in.
+3. Klik op Toevoegen.
 
-### Moving a Sheep
-- **Option 1:** Click the sheep's name anywhere in a zone
-- **Option 2:** Click the "Verplaats" button in the sheep list
-- Select target field and zone (auto-selected if only 1 zone available)
-- Click "Verplaats" to move
+### Zone toevoegen of bewerken
+1. Open een weide.
+2. Klik op + voor een nieuwe zone, of op het edit-icoon naast een zone-naam.
+3. Vul naam, oppervlakte (m2) en omtrek (m) in.
+4. Sla op.
 
-### Deleting Zones or Fields
-1. Click the `−` button on the zone or field (not available for Stal)
-2. If sheep are present, select their destination
-3. Confirm or cancel in the modal
-4. Sheep auto-move if only 1 target exists
+### Schaap verplaatsen
+1. Klik op Verplaats bij een schaap in de lijst, of klik op een schaapnaam in een zone.
+2. Kies doelweide en doelzone.
+3. Klik op Verplaats.
 
-### Managing Data
-- **Export** — Click "Download data" to save a backup JSON file
-- **Import** — Click "Upload data" and select a previously exported JSON file
-- **Clear all** — Click "Wipe all data" to reset the entire database
+## Bestandsstructuur
 
-## Architecture
+- [index.html](index.html): structuur van de pagina en modals.
+- [app.js](app.js): state, businesslogica, event handling, opslag, weer en historiek.
+- [styles.css](styles.css): layout en styling.
+- [gras.png](gras.png), [stal.png](stal.png), [schaap.png](schaap.png), [wol.png](wol.png): visuele assets.
 
-### Files
-- `index.html` — DOM structure and modal definitions
-- `app.js` — Core logic, state management, event delegation, and persistence
-- `styles.css` — Responsive design, component styling, and animations
-- `schaap.png` — Sheep icon overlay for zone displays
-- `gras.png` — Grass background image for regular zones
-- `stal.png` — Barn background image for Stal zones
+## Datamodel (vereenvoudigd)
 
-### Key Data Model
-```javascript
+```js
 state = {
   paddocks: [
     {
       id: string,
       name: string,
+      postcode: string,
       zones: [
-        { id: string, name: string, emptySince: timestamp | null }
+        {
+          id: string,
+          name: string,
+          area: number | null,
+          perimeter: number | null,
+          emptySince: timestamp | null
+        }
       ]
     }
   ],
@@ -109,20 +108,27 @@ state = {
       zoneId: string | null,
       lastUpdated: timestamp
     }
+  ],
+  history: [
+    {
+      id: string,
+      ts: timestamp,
+      entity: string,
+      message: string
+    }
   ]
 }
 ```
 
-## Browser Compatibility
-- Chrome/Chromium (latest)
-- Firefox (latest)
-- Safari (latest)
-- Edge (latest)
+## Browsercompatibiliteit
 
-Requires ES6 support and `localStorage` API availability.
+- Chrome / Chromium (recent)
+- Edge (recent)
+- Firefox (recent)
+- Safari (recent)
 
-## Notes
-- The app requires no backend server or installation
-- All data is stored locally in your browser
-- Exporting regularly is recommended for data backup
-- The Stal field and zone are protected to ensure a default location always exists
+Vereist ondersteuning voor ES6 en localStorage.
+
+## Opmerking
+
+De map [server](server) is aanwezig in de repository, maar de frontend in deze root werkt zelfstandig in de browser.
