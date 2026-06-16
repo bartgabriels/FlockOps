@@ -20,6 +20,60 @@ let pendingInjectionSheepId = null
 let pendingShearingSheepId = null
 let hasTriggeredExitDownload = false
 
+const SEO_BY_LANG = {
+  nl: {
+    title: 'FlockOps | Schapenbeheer voor Weides en Zones',
+    description: 'FlockOps is een snelle webapp voor schapenbeheer: weides, zones, verplaatsingen, historiek en lokale data-opslag met JSON export/import.',
+    ogDescription: 'Beheer schapen, weides en zones in een snelle browserapp met historiek en JSON back-ups.',
+    twitterDescription: 'Browsergebaseerde schapenbeheer app met zones, historiek en JSON back-ups.',
+    structuredDescription: 'Webapp voor schapenbeheer met weides, zones, historiek en JSON import/export.',
+    ogLocale: 'nl_BE'
+  },
+  en: {
+    title: 'FlockOps | Sheep Management for Paddocks and Zones',
+    description: 'FlockOps is a fast web app for sheep management: paddocks, zones, moves, history, and local storage with JSON export/import.',
+    ogDescription: 'Manage sheep, paddocks, and zones in a fast browser app with history and JSON backups.',
+    twitterDescription: 'Browser-based sheep management app with zones, history, and JSON backups.',
+    structuredDescription: 'Web app for sheep management with paddocks, zones, history, and JSON import/export.',
+    ogLocale: 'en_US'
+  },
+  fr: {
+    title: 'FlockOps | Gestion des moutons par paturages et zones',
+    description: 'FlockOps est une application web rapide pour la gestion des moutons: paturages, zones, deplacements, historique et stockage local avec export/import JSON.',
+    ogDescription: 'Gerez moutons, paturages et zones dans une application navigateur rapide avec historique et sauvegardes JSON.',
+    twitterDescription: 'Application de gestion des moutons dans le navigateur avec zones, historique et sauvegardes JSON.',
+    structuredDescription: 'Application web pour la gestion des moutons avec paturages, zones, historique et import/export JSON.',
+    ogLocale: 'fr_FR'
+  }
+}
+
+const SEO_BASE_URL = 'https://bartgabriels.github.io/FlockOps/'
+const SEO_HREFLANG_URLS = {
+  nl: `${SEO_BASE_URL}?lang=nl`,
+  en: `${SEO_BASE_URL}?lang=en`,
+  fr: `${SEO_BASE_URL}?lang=fr`,
+  'x-default': SEO_BASE_URL
+}
+
+function seoUrlForLang(lang){
+  if(lang === 'en' || lang === 'fr') return `${SEO_BASE_URL}?lang=${lang}`
+  return SEO_BASE_URL
+}
+
+function syncLanguageUrl(lang){
+  try {
+    const url = new URL(window.location.href)
+    if(lang === 'nl') {
+      url.searchParams.delete('lang')
+    } else {
+      url.searchParams.set('lang', lang)
+    }
+    window.history.replaceState({}, '', url.toString())
+  } catch (error) {
+    console.warn('Could not sync language query param:', error)
+  }
+}
+
 const translations = {
   nl: {
     'app.title': 'FlockOps',
@@ -681,6 +735,8 @@ translations.fr = translationsFr
 
 let currentLang = (() => {
   try {
+    const urlLang = new URLSearchParams(window.location.search).get('lang')
+    if(urlLang && translations[urlLang]) return urlLang
     const saved = localStorage.getItem(LANG_KEY)
     return (saved && translations[saved]) ? saved : 'nl'
   } catch (e) {
@@ -790,6 +846,7 @@ function setLanguage(lang){
   } catch (e) {
     console.warn('Could not save language preference to localStorage')
   }
+  syncLanguageUrl(lang)
   applyStaticTranslations()
   render()
 }
@@ -893,6 +950,7 @@ function executeDeleteConfirmed(){
 
 function applyStaticTranslations(){
   document.documentElement.lang = currentLang
+  applySeoMetadata()
   const setText = (id, value) => {
     const el = document.getElementById(id)
     if(el) el.textContent = value
@@ -1020,6 +1078,49 @@ function applyStaticTranslations(){
 
   const langSelect = document.getElementById('language-select')
   if(langSelect) langSelect.value = currentLang
+}
+
+function applySeoMetadata(){
+  const seo = SEO_BY_LANG[currentLang] || SEO_BY_LANG.nl
+  const canonicalUrl = seoUrlForLang(currentLang)
+  document.title = seo.title
+
+  const setMeta = (selector, content) => {
+    const el = document.querySelector(selector)
+    if(el) el.setAttribute('content', content)
+  }
+
+  const setLink = (selector, href) => {
+    const el = document.querySelector(selector)
+    if(el) el.setAttribute('href', href)
+  }
+
+  setMeta('meta[name="description"]', seo.description)
+  setMeta('meta[property="og:title"]', seo.title)
+  setMeta('meta[property="og:description"]', seo.ogDescription)
+  setMeta('meta[property="og:locale"]', seo.ogLocale)
+  setMeta('meta[property="og:url"]', canonicalUrl)
+  setMeta('meta[name="twitter:title"]', seo.title)
+  setMeta('meta[name="twitter:description"]', seo.twitterDescription)
+
+  setLink('link[rel="canonical"]', canonicalUrl)
+  setLink('link[rel="alternate"][hreflang="nl"]', SEO_HREFLANG_URLS.nl)
+  setLink('link[rel="alternate"][hreflang="en"]', SEO_HREFLANG_URLS.en)
+  setLink('link[rel="alternate"][hreflang="fr"]', SEO_HREFLANG_URLS.fr)
+  setLink('link[rel="alternate"][hreflang="x-default"]', SEO_HREFLANG_URLS['x-default'])
+
+  const structuredDataEl = document.getElementById('seo-structured-data')
+  if(structuredDataEl){
+    try {
+      const data = JSON.parse(structuredDataEl.textContent || '{}')
+      data.description = seo.structuredDescription
+      data.url = canonicalUrl
+      data.inLanguage = currentLang
+      structuredDataEl.textContent = JSON.stringify(data)
+    } catch (error) {
+      console.warn('Unable to update structured SEO data:', error)
+    }
+  }
 }
 
 function initLanguageSelector(){

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://bartgabriels.github.io/FlockOps/sitemap.xml
