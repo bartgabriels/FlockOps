@@ -323,6 +323,17 @@ button.add-zone-button:hover {
   border-radius:999px;
   padding:1px 7px;
   white-space:nowrap;
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+}
+
+.paddock-flag{
+  width:14px;
+  height:10px;
+  object-fit:cover;
+  border-radius:2px;
+  border:1px solid rgba(0,0,0,0.12);
 }
 
 .paddock-metric{

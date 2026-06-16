@@ -672,6 +672,7 @@ function initTabs(){
 function detectPostcodeCountry(postcode){
   const normalized = postcode.trim().toUpperCase().replace(/\s+/g, '')
   if(/^\d{4}$/.test(normalized)) return 'BE'
+  if(/^\d{5}$/.test(normalized)) return 'FR'
   if(/^\d{4}[A-Z]{2}$/.test(normalized)) return 'NL'
   return null
 }
@@ -1047,6 +1048,11 @@ function renderPaddock(p){
   const sheepCount = state.sheep.filter(s => s.paddockId === p.id).length
   const sheepLabel = sheepCount === 1 ? t('paddock.sheep.singular') : t('paddock.sheep.plural')
   const paddockPostcode = (p.postcode || '').trim()
+  const paddockCountry = paddockPostcode ? detectPostcodeCountry(paddockPostcode) : null
+  const paddockFlagCode = paddockCountry ? paddockCountry.toLowerCase() : ''
+  const paddockFlagHtml = paddockFlagCode
+    ? `<img class="paddock-flag" src="flags/${paddockFlagCode}.png" alt="${paddockCountry} flag">`
+    : ''
   const hasZoneArea = p.zones.some(z => z.area !== null)
   const totalZoneArea = p.zones.reduce((sum, z) => sum + (Number.isFinite(Number(z.area)) ? Number(z.area) : 0), 0)
   const paddockArea = hasZoneArea ? `${totalZoneArea} m2` : ''
@@ -1058,7 +1064,7 @@ function renderPaddock(p){
         <button type="button" class="paddock-edit-button" data-paddock-id="${p.id}" aria-label="${t('aria.editPaddock')}">✎</button>
         <button type="button" class="paddock-collapse-button" data-paddock-id="${p.id}" aria-label="${isExpanded ? t('aria.collapsePaddock') : t('aria.expandPaddock')}">${isExpanded ? '▾' : '▸'}</button>
         <strong>${p.name}</strong>
-        ${paddockPostcode ? `<span class="paddock-postcode">${paddockPostcode}</span>` : ''}
+        ${paddockPostcode ? `<span class="paddock-postcode">${paddockFlagHtml}<span>${paddockPostcode}</span></span>` : ''}
         ${paddockArea ? `<span class="paddock-metric">${paddockArea}</span>` : ''}
         <span class="paddock-sheep-count">${sheepCount} ${sheepLabel}</span>
       </div>
