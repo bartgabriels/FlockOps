@@ -755,8 +755,8 @@ async function loadWeatherForPostcode(postcode){
     const daily = forecast.daily || {}
     const times = Array.isArray(daily.time) ? daily.time.slice(0, 3) : []
     const days = times.map((d, i) => ({
-      day: formatForecastDay(d),
-      label: weatherLabel(daily.weathercode?.[i]),
+      date: d,
+      weatherCode: Number(daily.weathercode?.[i]),
       max: Math.round(Number(daily.temperature_2m_max?.[i] ?? 0)),
       min: Math.round(Number(daily.temperature_2m_min?.[i] ?? 0)),
       rain: Math.round(Number(daily.precipitation_probability_max?.[i] ?? 0))
@@ -804,7 +804,11 @@ function renderPaddockWeather(paddock, isVisible){
     return `<div class="paddock-weather paddock-weather-error${visibilityClass}">${t('weather.noForecast', { postcode: postcodeKey })}</div>`
   }
 
-  return `<div class="paddock-weather${visibilityClass}">${cached.days.map(day => `<div class="weather-day"><strong>${day.day}</strong><small>${day.label}</small><small>${day.max}° / ${day.min}°</small><small>${t('weather.rainPercentage', { rain: day.rain })}</small></div>`).join('')}</div>`
+  return `<div class="paddock-weather${visibilityClass}">${cached.days.map(day => {
+    const dayText = day.date ? formatForecastDay(day.date) : (day.day || '')
+    const labelText = Number.isFinite(day.weatherCode) ? weatherLabel(day.weatherCode) : (day.label || '')
+    return `<div class="weather-day"><strong>${dayText}</strong><small>${labelText}</small><small>${day.max}° / ${day.min}°</small><small>${t('weather.rainPercentage', { rain: day.rain })}</small></div>`
+  }).join('')}</div>`
 }
 
 function ensureDefaultStal(){
