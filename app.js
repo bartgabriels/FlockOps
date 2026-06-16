@@ -332,8 +332,15 @@ const translations = {
   }
 }
 
-let currentLang = localStorage.getItem(LANG_KEY) || 'nl'
-if(!translations[currentLang]) currentLang = 'nl'
+let currentLang = (() => {
+  try {
+    const saved = localStorage.getItem(LANG_KEY)
+    return (saved && translations[saved]) ? saved : 'nl'
+  } catch (e) {
+    console.warn('localStorage not available, using default language')
+    return 'nl'
+  }
+})()
 
 function localeTag(){
   return currentLang === 'en' ? 'en-GB' : 'nl-NL'
@@ -350,9 +357,16 @@ function t(key, params = {}){
 }
 
 function setLanguage(lang){
-  if(!translations[lang]) return
+  if(!translations[lang]) {
+    console.warn(`Language ${lang} not available`)
+    return
+  }
   currentLang = lang
-  localStorage.setItem(LANG_KEY, lang)
+  try {
+    localStorage.setItem(LANG_KEY, lang)
+  } catch (e) {
+    console.warn('Could not save language preference to localStorage')
+  }
   applyStaticTranslations()
   render()
 }
@@ -431,10 +445,14 @@ function applyStaticTranslations(){
 
 function initLanguageSelector(){
   const langSelect = document.getElementById('language-select')
-  if(!langSelect) return
+  if(!langSelect){
+    console.warn('Language selector element not found')
+    return
+  }
   langSelect.value = currentLang
-  langSelect.addEventListener('change', () => {
-    setLanguage(langSelect.value)
+  langSelect.addEventListener('change', (e) => {
+    const newLang = e.target.value
+    setLanguage(newLang)
   })
 }
 
@@ -2007,6 +2025,18 @@ document.getElementById('zone-modal-form')?.addEventListener('submit', e => {
   save(); render(); closeModal('zone-modal')
 })
 
-initLanguageSelector()
-applyStaticTranslations()
-load(); render()
+// Ensure initialization happens after DOM is fully loaded
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', () => {
+    initLanguageSelector()
+    applyStaticTranslations()
+    load()
+    render()
+  })
+} else {
+  // DOM is already loaded (e.g., when script is deferred or at end of body)
+  initLanguageSelector()
+  applyStaticTranslations()
+  load()
+  render()
+}
