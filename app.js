@@ -170,6 +170,7 @@ function load(){
     state.sheep = Array.isArray(saved.sheep) ? saved.sheep.map(s => ({
       id: s.id,
       tag: s.tag,
+      earmark: typeof s.earmark === 'string' && s.earmark.trim() ? s.earmark.trim() : null,
       gender: s.gender === 'male' || s.gender === 'female' ? s.gender : null,
       motherId: s.motherId ?? null,
       fatherId: s.fatherId ?? null,
@@ -185,6 +186,7 @@ function load(){
     })) : []
   }
   ensureDefaultStal()
+  dedupeEarmarks()
   updateZoneEmptyStates()
 }
 
@@ -221,6 +223,22 @@ function updateZoneEmptyStates(){
       }
     })
   })
+}
+
+function dedupeEarmarks(){
+  const seen = new Set()
+  let removedCount = 0
+  state.sheep.forEach(s => {
+    const normalized = normalizeEarmark(s.earmark)
+    if(!normalized) return
+    if(seen.has(normalized)){
+      s.earmark = null
+      removedCount += 1
+      return
+    }
+    seen.add(normalized)
+  })
+  return removedCount
 }
 
 function addHistory(entity, message){
@@ -277,6 +295,7 @@ function importDataFile(file){
       state.sheep = Array.isArray(parsed.sheep) ? parsed.sheep.map(s => ({
         id: s.id,
         tag: s.tag,
+        earmark: typeof s.earmark === 'string' && s.earmark.trim() ? s.earmark.trim() : null,
         gender: s.gender === 'male' || s.gender === 'female' ? s.gender : null,
         motherId: s.motherId ?? null,
         fatherId: s.fatherId ?? null,
@@ -291,7 +310,11 @@ function importDataFile(file){
         message: h.message || ''
       })) : []
       ensureDefaultStal()
+      const removedEarmarks = dedupeEarmarks()
       updateZoneEmptyStates()
+      if(removedEarmarks > 0){
+        addHistory('systeem', `${removedEarmarks} duplicaat oorkenmerk(en) verwijderd bij import`)
+      }
       addHistory('systeem', 'Gegevens geïmporteerd uit bestand')
       save(); render()
       alert('Gegevens succesvol geladen.')
@@ -420,6 +443,16 @@ function getPaddock(id){ return state.paddocks.find(x => x.id === id) }
 function getZone(paddockId, zoneId){
   const paddock = getPaddock(paddockId)
   return paddock ? paddock.zones.find(x => x.id === zoneId) : null
+}
+
+function normalizeEarmark(value){
+  return typeof value === 'string' ? value.trim().toLowerCase() : ''
+}
+
+function isEarmarkInUse(earmark, excludeSheepId = null){
+  const normalized = normalizeEarmark(earmark)
+  if(!normalized) return false
+  return state.sheep.some(s => s.id !== excludeSheepId && normalizeEarmark(s.earmark) === normalized)
 }
 
 function setSheepModalDefaultSelection(){
@@ -837,9 +870,32 @@ function openEditSheepTagModal(sheepId){
   if(input){
     input.value = sheep.tag
   }
-  document.querySelectorAll('input[name="sheep-edit-gender"]').forEach(radio => {
-    radio.checked = radio.value === sheep.gender
-  })
+  const earmarkText = document.getElementById('sheep-edit-earmark-text')
+  const earmarkInput = document.getElementById('sheep-edit-earmark-input')
+  if(earmarkText && earmarkInput){
+    if(sheep.earmark){
+      earmarkText.textContent = sheep.earmark
+      earmarkText.hidden = false
+      earmarkInput.hidden = true
+      earmarkInput.disabled = true
+      earmarkInput.value = ''
+    } else {
+      earmarkText.hidden = true
+      earmarkInput.hidden = false
+      earmarkInput.disabled = false
+      earmarkInput.value = ''
+    }
+  }
+  const genderDisplay = document.getElementById('sheep-edit-gender-display')
+  if(genderDisplay){
+    if(sheep.gender === 'female'){
+      genderDisplay.innerHTML = '<span class="gender-symbol female" aria-hidden="true">♀</span> Ooi'
+    } else if(sheep.gender === 'male'){
+      genderDisplay.innerHTML = '<span class="gender-symbol male" aria-hidden="true">♂</span> Ram'
+    } else {
+      genderDisplay.textContent = '-'
+    }
+  }
 
   const pedigreeDisplay = document.getElementById('sheep-edit-pedigree-display')
   if(pedigreeDisplay){
@@ -850,22 +906,13 @@ function openEditSheepTagModal(sheepId){
     pedigreeDisplay.textContent = `"${fatherLabel}" x "${motherLabel}"`
   }
 
-  const editPaddockSelect = document.getElementById('sheep-edit-paddock-modal')
-  const editZoneSelect = document.getElementById('sheep-edit-zone-modal')
+  const locationDisplay = document.getElementById('sheep-edit-location-display')
   const paddock = getPaddock(sheep.paddockId)
   const zone = sheep.zoneId ? getZone(sheep.paddockId, sheep.zoneId) : null
-  if(editPaddockSelect){
-    editPaddockSelect.innerHTML = `<option value="${sheep.paddockId}">${paddock ? paddock.name : 'Onbekend'}</option>`
-    editPaddockSelect.value = sheep.paddockId
-  }
-  if(editZoneSelect){
-    if(sheep.zoneId){
-      editZoneSelect.innerHTML = `<option value="${sheep.zoneId}">${zone ? zone.name : 'Onbekend'}</option>`
-      editZoneSelect.value = sheep.zoneId
-    } else {
-      editZoneSelect.innerHTML = '<option value="">Geen zone</option>'
-      editZoneSelect.value = ''
-    }
+  if(locationDisplay){
+    const paddockLabel = paddock ? paddock.name : 'Onbekend veld'
+    const zoneLabel = sheep.zoneId ? (zone ? zone.name : 'Onbekende zone') : 'Geen zone'
+    locationDisplay.textContent = `${paddockLabel} / ${zoneLabel}`
   }
 
   const modal = document.getElementById('sheep-tag-edit-modal')
@@ -1100,6 +1147,8 @@ document.getElementById('zone-edit-form')?.addEventListener('submit', e => {
 document.getElementById('sheep-modal-form')?.addEventListener('submit', e => {
   e.preventDefault()
   const tag = document.getElementById('sheep-modal-tag').value.trim()
+  const earmarkInput = document.getElementById('sheep-modal-earmark')
+  const earmark = earmarkInput ? earmarkInput.value.trim() : ''
   const selectedGender = document.querySelector('input[name="sheep-modal-gender"]:checked')
   const gender = selectedGender ? selectedGender.value : null
   const motherId = document.getElementById('sheep-mother-modal').value || null
@@ -1107,11 +1156,18 @@ document.getElementById('sheep-modal-form')?.addEventListener('submit', e => {
   const paddockId = document.getElementById('sheep-paddock-modal').value
   const zoneId = document.getElementById('sheep-zone-modal').value
   if(!tag || !paddockId || !gender) return
+  if(isEarmarkInUse(earmark)){
+    alert('Dit oorkenmerk is al toegewezen aan een ander schaap.')
+    return
+  }
   if(motherId && !state.sheep.some(s => s.id === motherId && s.gender === 'female')) return
   if(fatherId && !state.sheep.some(s => s.id === fatherId && s.gender === 'male')) return
-  state.sheep.push({id:uid(), tag, gender, motherId, fatherId, paddockId, zoneId: zoneId || null, lastUpdated: Date.now()})
+  state.sheep.push({id:uid(), tag, earmark: earmark || null, gender, motherId, fatherId, paddockId, zoneId: zoneId || null, lastUpdated: Date.now()})
   addHistory('schaap', `${tag} toegevoegd in ${paddockName(paddockId)}${zoneId ? ' / ' + zoneName(paddockId, zoneId) : ''}`)
   document.getElementById('sheep-modal-tag').value = ''
+  if(earmarkInput){
+    earmarkInput.value = ''
+  }
   document.querySelectorAll('input[name="sheep-modal-gender"]').forEach(radio => {
     radio.checked = false
   })
@@ -1126,17 +1182,30 @@ document.getElementById('sheep-tag-edit-form')?.addEventListener('submit', e => 
   if(!activeEditSheepId) return
 
   const input = document.getElementById('sheep-tag-edit-input')
+  const earmarkInput = document.getElementById('sheep-edit-earmark-input')
   const nextTag = input ? input.value.trim() : ''
+  const nextEarmark = earmarkInput ? earmarkInput.value.trim() : ''
   if(!nextTag) return
 
   const sheep = state.sheep.find(s => s.id === activeEditSheepId)
   if(!sheep) return
 
   const previousTag = sheep.tag
+  const previousEarmark = sheep.earmark ?? null
   sheep.tag = nextTag
+  if(!previousEarmark && nextEarmark && isEarmarkInUse(nextEarmark, sheep.id)){
+    alert('Dit oorkenmerk is al toegewezen aan een ander schaap.')
+    return
+  }
+  if(!previousEarmark && nextEarmark){
+    sheep.earmark = nextEarmark
+  }
   sheep.lastUpdated = Date.now()
-  if(previousTag !== nextTag){
-    addHistory('schaap', `Schaap hernoemt: ${previousTag} -> ${nextTag}`)
+  if(previousTag !== nextTag || (!previousEarmark && nextEarmark)){
+    const namePart = previousTag !== nextTag ? `naam ${previousTag} -> ${nextTag}` : null
+    const earmarkPart = (!previousEarmark && nextEarmark) ? `oorkenmerk toegevoegd: ${nextEarmark}` : null
+    const details = [namePart, earmarkPart].filter(Boolean).join(', ')
+    addHistory('schaap', `Schaap bijgewerkt: ${details}`)
   }
   save(); render(); closeEditSheepTagModal()
 })
