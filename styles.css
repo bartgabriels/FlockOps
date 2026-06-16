@@ -928,6 +928,17 @@ form button{
   font-size:0.72rem;
 }
 
+.sheep-birthdate-input{
+  padding:4px 6px;
+  font-size:0.72rem;
+  min-height:30px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:#fff;
+  color:var(--text-primary);
+  text-shadow:none;
+}
+
 .sheep-earmark{
   color:var(--chip-text);
   font-size:0.72rem;

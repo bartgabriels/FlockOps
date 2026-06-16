@@ -47,6 +47,7 @@ const translations = {
     'sheep.add.title': 'Schaap toevoegen',
     'sheep.add.tagPlaceholder': 'Tag',
     'sheep.add.earmarkPlaceholder': 'Oorkenmerk (optioneel)',
+    'sheep.birthDateLabel': 'Geboortedatum',
     'sheep.genderLabel': 'Geslacht',
     'sheep.gender.female': 'Ooi',
     'sheep.gender.male': 'Ram',
@@ -77,9 +78,13 @@ const translations = {
     'history.details.earmarkAdded': 'oorkenmerk toegevoegd: {earmark}',
     'entity.sheep': 'schaap',
     'errors.earmark.duplicate': 'Dit oorkenmerk is al toegewezen aan een ander schaap.',
+    'labels.age': 'Leeftijd: {age}',
+    'labels.ageYearsMonths': '{years} jr {months} mnd',
+    'labels.birthDate': 'Geboortedatum: {date}',
     'labels.lastUpdated': 'Laatst gewijzigd: {date} ({days} dagen geleden)',
     'actions.move': 'Verplaats',
     'aria.editSheepName': 'Naam wijzigen voor {tag}',
+    'aria.setSheepBirthDate': 'Geboortedatum instellen voor {tag}',
     'aria.deleteSheep': 'Schaap verwijderen',
     'aria.addSheep': 'Schaap toevoegen',
     'aria.addPaddock': 'Weide toevoegen',
@@ -228,6 +233,7 @@ const translations = {
     'sheep.add.title': 'Add sheep',
     'sheep.add.tagPlaceholder': 'Tag',
     'sheep.add.earmarkPlaceholder': 'Earmark (optional)',
+    'sheep.birthDateLabel': 'Birth date',
     'sheep.genderLabel': 'Sex',
     'sheep.gender.female': 'Ewe',
     'sheep.gender.male': 'Ram',
@@ -258,9 +264,13 @@ const translations = {
     'history.details.earmarkAdded': 'earmark added: {earmark}',
     'entity.sheep': 'sheep',
     'errors.earmark.duplicate': 'This earmark is already assigned to another sheep.',
+    'labels.age': 'Age: {age}',
+    'labels.ageYearsMonths': '{years} y {months} m',
+    'labels.birthDate': 'Birth date: {date}',
     'labels.lastUpdated': 'Last updated: {date} ({days} days ago)',
     'actions.move': 'Move',
     'aria.editSheepName': 'Edit name for {tag}',
+    'aria.setSheepBirthDate': 'Set birth date for {tag}',
     'aria.deleteSheep': 'Delete sheep',
     'aria.addSheep': 'Add sheep',
     'aria.addPaddock': 'Add paddock',
@@ -412,6 +422,7 @@ const translationsFr = {
   'section.history': 'Historique',
   'sheep.add.title': 'Ajouter un mouton',
   'sheep.add.earmarkPlaceholder': 'Marque auriculaire (optionnel)',
+  'sheep.birthDateLabel': 'Date de naissance',
   'sheep.genderLabel': 'Sexe',
   'sheep.gender.female': 'Brebis',
   'sheep.gender.male': 'Bélier',
@@ -442,9 +453,13 @@ const translationsFr = {
   'history.details.earmarkAdded': 'marque auriculaire ajoutée : {earmark}',
   'entity.sheep': 'mouton',
   'errors.earmark.duplicate': 'Cette marque auriculaire est déjà attribuée à un autre mouton.',
+  'labels.age': 'Âge : {age}',
+  'labels.ageYearsMonths': '{years} a {months} m',
+  'labels.birthDate': 'Date de naissance : {date}',
   'labels.lastUpdated': 'Dernière mise à jour : {date} (il y a {days} jours)',
   'actions.move': 'Déplacer',
   'aria.editSheepName': 'Modifier le nom de {tag}',
+  'aria.setSheepBirthDate': 'Définir la date de naissance pour {tag}',
   'aria.deleteSheep': 'Supprimer le mouton',
   'aria.addSheep': 'Ajouter un mouton',
   'aria.addPaddock': 'Ajouter un pâturage',
@@ -795,6 +810,7 @@ function applyStaticTranslations(){
   setText('sheep-modal-title', t('sheep.add.title'))
   setPlaceholder('sheep-modal-tag', t('sheep.add.tagPlaceholder'))
   setPlaceholder('sheep-modal-earmark', t('sheep.add.earmarkPlaceholder'))
+  setText('sheep-modal-birth-date-label', t('sheep.birthDateLabel'))
   setText('sheep-modal-gender-label', t('sheep.genderLabel'))
   setText('sheep-modal-gender-female-label', t('sheep.gender.female'))
   setText('sheep-modal-gender-male-label', t('sheep.gender.male'))
@@ -808,6 +824,7 @@ function applyStaticTranslations(){
   setPlaceholder('sheep-tag-edit-input', t('sheep.edit.tagPlaceholder'))
   setText('sheep-edit-earmark-label', t('sheep.edit.earmarkLabel'))
   setPlaceholder('sheep-edit-earmark-input', t('sheep.edit.earmarkPlaceholder'))
+  setText('sheep-edit-birth-date-label', t('sheep.birthDateLabel'))
   setText('sheep-edit-gender-label', t('sheep.genderLabel'))
   setText('sheep-edit-pedigree-label', t('sheep.pedigreeLabel'))
   setText('sheep-edit-location-label', t('sheep.locationLabel'))
@@ -1077,6 +1094,7 @@ function load(){
       id: s.id,
       tag: s.tag,
       earmark: typeof s.earmark === 'string' && s.earmark.trim() ? s.earmark.trim() : null,
+      birthDate: typeof s.birthDate === 'string' && s.birthDate.trim() ? s.birthDate.trim() : null,
       gender: s.gender === 'male' || s.gender === 'female' ? s.gender : null,
       motherId: s.motherId ?? null,
       fatherId: s.fatherId ?? null,
@@ -1100,6 +1118,36 @@ function load(){
 function save(){
   updateZoneEmptyStates()
   localStorage.setItem(KEY, JSON.stringify(state))
+}
+
+function formatBirthDate(dateString){
+  if(!dateString) return ''
+  return new Date(`${dateString}T12:00:00`).toLocaleDateString(localeTag(), {
+    day: '2-digit', month: '2-digit', year: 'numeric'
+  })
+}
+
+function formatAge(dateString){
+  if(!dateString) return ''
+  const birthDate = new Date(`${dateString}T12:00:00`)
+  if(Number.isNaN(birthDate.getTime())) return ''
+  const now = new Date()
+  let years = now.getFullYear() - birthDate.getFullYear()
+  let months = now.getMonth() - birthDate.getMonth()
+
+  if(now.getDate() < birthDate.getDate()){
+    months -= 1
+  }
+  if(months < 0){
+    years -= 1
+    months += 12
+  }
+  if(years < 0){
+    years = 0
+    months = 0
+  }
+
+  return t('labels.ageYearsMonths', { years, months })
 }
 
 function formatDate(timestamp){
@@ -1204,6 +1252,7 @@ function importDataFile(file){
         id: s.id,
         tag: s.tag,
         earmark: typeof s.earmark === 'string' && s.earmark.trim() ? s.earmark.trim() : null,
+        birthDate: typeof s.birthDate === 'string' && s.birthDate.trim() ? s.birthDate.trim() : null,
         gender: s.gender === 'male' || s.gender === 'female' ? s.gender : null,
         motherId: s.motherId ?? null,
         fatherId: s.fatherId ?? null,
@@ -1269,6 +1318,9 @@ function render(){
             <span class="sheep-name-label">${s.tag}${genderIcon(s.gender)}</span>
           </div>
           ${s.earmark ? `<small class="sheep-earmark">🏷 ${s.earmark}</small>` : `<small class="sheep-earmark sheep-earmark--empty">&nbsp;</small>`}
+          ${s.birthDate
+            ? `<small>${t('labels.age', { age: formatAge(s.birthDate) })}</small>`
+            : `<input type="date" class="sheep-birthdate-input" data-id="${s.id}" aria-label="${t('aria.setSheepBirthDate', { tag: s.tag })}">`}
           <small>${paddockName(s.paddockId)}${s.zoneId ? ' / ' + zoneName(s.paddockId, s.zoneId) : ''}</small>
           <small>${t('labels.lastUpdated', { date: formatDate(s.lastUpdated), days: daysSince(s.lastUpdated) })}</small>
         </div>
@@ -1850,6 +1902,8 @@ function openEditSheepTagModal(sheepId){
   }
   const earmarkText = document.getElementById('sheep-edit-earmark-text')
   const earmarkInput = document.getElementById('sheep-edit-earmark-input')
+  const birthDateText = document.getElementById('sheep-edit-birth-date-text')
+  const birthDateInput = document.getElementById('sheep-edit-birth-date-input')
   if(earmarkText && earmarkInput){
     if(sheep.earmark){
       earmarkText.textContent = sheep.earmark
@@ -1862,6 +1916,20 @@ function openEditSheepTagModal(sheepId){
       earmarkInput.hidden = false
       earmarkInput.disabled = false
       earmarkInput.value = ''
+    }
+  }
+  if(birthDateText && birthDateInput){
+    if(sheep.birthDate){
+      birthDateText.textContent = formatBirthDate(sheep.birthDate)
+      birthDateText.hidden = false
+      birthDateInput.hidden = true
+      birthDateInput.disabled = true
+      birthDateInput.value = ''
+    } else {
+      birthDateText.hidden = true
+      birthDateInput.hidden = false
+      birthDateInput.disabled = false
+      birthDateInput.value = ''
     }
   }
   const genderDisplay = document.getElementById('sheep-edit-gender-display')
@@ -2151,6 +2219,8 @@ document.getElementById('sheep-modal-form')?.addEventListener('submit', e => {
   const tag = document.getElementById('sheep-modal-tag').value.trim()
   const earmarkInput = document.getElementById('sheep-modal-earmark')
   const earmark = earmarkInput ? earmarkInput.value.trim() : ''
+  const birthDateInput = document.getElementById('sheep-modal-birth-date')
+  const birthDate = birthDateInput ? birthDateInput.value.trim() : ''
   const selectedGender = document.querySelector('input[name="sheep-modal-gender"]:checked')
   const gender = selectedGender ? selectedGender.value : null
   const motherId = document.getElementById('sheep-mother-modal').value || null
@@ -2164,11 +2234,14 @@ document.getElementById('sheep-modal-form')?.addEventListener('submit', e => {
   }
   if(motherId && !state.sheep.some(s => s.id === motherId && s.gender === 'female')) return
   if(fatherId && !state.sheep.some(s => s.id === fatherId && s.gender === 'male')) return
-  state.sheep.push({id:uid(), tag, earmark: earmark || null, gender, motherId, fatherId, paddockId, zoneId: zoneId || null, lastUpdated: Date.now()})
+  state.sheep.push({id:uid(), tag, earmark: earmark || null, birthDate: birthDate || null, gender, motherId, fatherId, paddockId, zoneId: zoneId || null, lastUpdated: Date.now()})
   addHistory(t('entity.sheep'), t('history.sheep.added', { tag, location: `${paddockName(paddockId)}${zoneId ? ' / ' + zoneName(paddockId, zoneId) : ''}` }))
   document.getElementById('sheep-modal-tag').value = ''
   if(earmarkInput){
     earmarkInput.value = ''
+  }
+  if(birthDateInput){
+    birthDateInput.value = ''
   }
   document.querySelectorAll('input[name="sheep-modal-gender"]').forEach(radio => {
     radio.checked = false
@@ -2185,8 +2258,10 @@ document.getElementById('sheep-tag-edit-form')?.addEventListener('submit', e => 
 
   const input = document.getElementById('sheep-tag-edit-input')
   const earmarkInput = document.getElementById('sheep-edit-earmark-input')
+  const birthDateInput = document.getElementById('sheep-edit-birth-date-input')
   const nextTag = input ? input.value.trim() : ''
   const nextEarmark = earmarkInput ? earmarkInput.value.trim() : ''
+  const nextBirthDate = birthDateInput ? birthDateInput.value.trim() : ''
   if(!nextTag) return
 
   const sheep = state.sheep.find(s => s.id === activeEditSheepId)
@@ -2194,6 +2269,7 @@ document.getElementById('sheep-tag-edit-form')?.addEventListener('submit', e => 
 
   const previousTag = sheep.tag
   const previousEarmark = sheep.earmark ?? null
+  const previousBirthDate = sheep.birthDate ?? null
   sheep.tag = nextTag
   if(!previousEarmark && nextEarmark && isEarmarkInUse(nextEarmark, sheep.id)){
     alert(t('errors.earmark.duplicate'))
@@ -2201,6 +2277,9 @@ document.getElementById('sheep-tag-edit-form')?.addEventListener('submit', e => 
   }
   if(!previousEarmark && nextEarmark){
     sheep.earmark = nextEarmark
+  }
+  if(!previousBirthDate && nextBirthDate){
+    sheep.birthDate = nextBirthDate
   }
   sheep.lastUpdated = Date.now()
   if(previousTag !== nextTag || (!previousEarmark && nextEarmark)){
@@ -2410,6 +2489,18 @@ document.getElementById('sheep-list')?.addEventListener('click', e => {
   if(addBlock){
     openModal('sheep-modal')
   }
+})
+
+document.getElementById('sheep-list')?.addEventListener('change', e => {
+  const birthDateInput = e.target.closest('.sheep-birthdate-input')
+  if(!birthDateInput) return
+  const sheepId = birthDateInput.dataset.id
+  if(!sheepId) return
+  const sheep = state.sheep.find(s => s.id === sheepId)
+  if(!sheep) return
+  sheep.birthDate = birthDateInput.value.trim() || null
+  sheep.lastUpdated = Date.now()
+  save(); render()
 })
 
 document.getElementById('paddock-list').addEventListener('click', e => {
