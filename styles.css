@@ -257,6 +257,16 @@ button.add-zone-button:hover {
   white-space:nowrap;
 }
 
+.paddock-metric{
+  color:#475569;
+  font-size:0.75rem;
+  background:#f4f6f8;
+  border:1px solid #dde4ea;
+  border-radius:999px;
+  padding:1px 7px;
+  white-space:nowrap;
+}
+
 .paddock-delete-button{
   width:24px;
   height:24px;
@@ -291,6 +301,7 @@ button.add-zone-button:hover {
   align-items:center;
   justify-content:center;
   padding:0;
+  flex-shrink:0;
 }
 
 .paddock-edit-button:hover{
@@ -371,7 +382,29 @@ button.add-zone-button:hover {
   transition:background 0.2s ease;
 }
 
+.zone-item .zone-edit-button{
+  position:static;
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  border:none;
+  background:rgba(255,255,255,0.85);
+  color:#1f4332;
+  font-size:1rem;
+  line-height:1;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:background 0.2s ease;
+  flex-shrink:0;
+}
+
 .zone-item .zone-delete-button:hover{
+  background:rgba(255,255,255,1);
+}
+
+.zone-item .zone-edit-button:hover{
   background:rgba(255,255,255,1);
 }
 
@@ -419,6 +452,37 @@ button.add-zone-button:hover {
   font-size:0.8rem;
   word-break:break-word;
   margin:0;
+}
+
+.zone-header{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  padding-right:38px;
+}
+
+.zone-title-row{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  min-width:0;
+}
+
+.zone-metrics{
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px;
+}
+
+.zone-metric{
+  color:#244036;
+  font-size:0.68rem;
+  background:rgba(255,255,255,0.82);
+  border:1px solid rgba(219,232,223,0.95);
+  border-radius:999px;
+  padding:1px 6px;
+  white-space:nowrap;
+  text-shadow:none;
 }
 
 .zone-item small{

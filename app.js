@@ -147,7 +147,7 @@ function ensureDefaultStal(){
     id: paddockId,
     name: 'Stal',
     postcode: '',
-    zones: [{ id: zoneId, name: 'Stal', emptySince: Date.now() }]
+    zones: [{ id: zoneId, name: 'Stal', area: null, perimeter: null, emptySince: Date.now() }]
   })
 }
 
@@ -162,6 +162,8 @@ function load(){
       zones: Array.isArray(p.zones) ? p.zones.map(z => ({
         id: z.id,
         name: z.name,
+        area: Number.isFinite(Number(z.area)) ? Number(z.area) : null,
+        perimeter: Number.isFinite(Number(z.perimeter)) ? Number(z.perimeter) : null,
         emptySince: z.emptySince ?? Date.now()
       })) : []
     })) : []
@@ -264,6 +266,8 @@ function importDataFile(file){
         zones: Array.isArray(p.zones) ? p.zones.map(z => ({
           id: z.id,
           name: z.name,
+          area: Number.isFinite(Number(z.area)) ? Number(z.area) : null,
+          perimeter: Number.isFinite(Number(z.perimeter)) ? Number(z.perimeter) : null,
           emptySince: z.emptySince ?? Date.now()
         })) : []
       })) : []
@@ -350,19 +354,23 @@ function renderPaddock(p){
   const sheepCount = state.sheep.filter(s => s.paddockId === p.id).length
   const sheepLabel = sheepCount === 1 ? 'schaap' : 'schapen'
   const paddockPostcode = (p.postcode || '').trim()
+  const hasZoneArea = p.zones.some(z => z.area !== null)
+  const totalZoneArea = p.zones.reduce((sum, z) => sum + (Number.isFinite(Number(z.area)) ? Number(z.area) : 0), 0)
+  const paddockArea = hasZoneArea ? `${totalZoneArea} m2` : ''
   const weatherHtml = renderPaddockWeather(p, isWeatherExpanded)
   const canDeletePaddock = !isStalPaddock(p)
   return `<div class="card" data-id="${p.id}" ${isExpanded ? 'data-expanded="true"' : ''}>
     <div class="card-header" data-paddock-id="${p.id}" style="cursor:pointer;user-select:none">
       <div class="card-header-main">
+        <button type="button" class="paddock-edit-button" data-paddock-id="${p.id}" aria-label="Weide bewerken">✎</button>
         <strong>${p.name}</strong>
         ${paddockPostcode ? `<span class="paddock-postcode">${paddockPostcode}</span>` : ''}
+        ${paddockArea ? `<span class="paddock-metric">${paddockArea}</span>` : ''}
         <span class="paddock-sheep-count">${sheepCount} ${sheepLabel}</span>
       </div>
       <div class="card-header-actions">
         <span class="badge">${p.zones.length} zone(s)</span>
         <button type="button" class="weather-toggle-button" data-paddock-id="${p.id}">Weervoorspelling</button>
-        <button type="button" class="paddock-edit-button" data-paddock-id="${p.id}" aria-label="Weide bewerken">✎</button>
         ${canDeletePaddock ? `<button type="button" class="paddock-delete-button" data-paddock-id="${p.id}" aria-label="Weide verwijderen">−</button>` : ''}
       </div>
     </div>
@@ -372,6 +380,8 @@ function renderPaddock(p){
         const sheepInZone = state.sheep.filter(s => s.paddockId === p.id && s.zoneId === z.id)
         const sheepCount = sheepInZone.length
         const status = z.emptySince ? `Leeg sinds ${daysSince(z.emptySince)} dagen` : `Bezet${sheepCount ? ` (${sheepCount})` : ''}`
+        const zoneArea = z.area !== null ? `${z.area} m2` : ''
+        const zonePerimeter = z.perimeter !== null ? `${z.perimeter} m` : ''
         const bulkMoveButton = sheepCount > 1 ? `<button type="button" class="zone-bulk-move-button" data-paddock-id="${p.id}" data-zone-id="${z.id}">Verplaats alle dieren</button>` : ''
         const sheepLabel = sheepCount
           ? `<div class="zone-sheep-list${sheepCount > 6 ? ' is-scrollable' : ''}">${sheepInZone.map(s => `<button type="button" class="zone-sheep-link" data-sheep-id="${s.id}" aria-label="Verplaats ${s.tag}">${sheepIcon()}${s.tag}</button>`).join('')}</div>${bulkMoveButton}`
@@ -379,7 +389,7 @@ function renderPaddock(p){
         const stallZone = isStalZone(p, z)
         const useStallBackground = isStalPaddock(p)
         const canDeleteZone = !stallZone && p.zones.length > 1
-        return `<div class="zone-item${useStallBackground ? ' stall-zone-item' : ''}" data-paddock-id="${p.id}" data-zone-id="${z.id}">${canDeleteZone ? `<button type="button" class="zone-delete-button" data-paddock-id="${p.id}" data-zone-id="${z.id}" aria-label="Zone verwijderen">−</button>` : ''}<div><strong>${z.name}</strong><small>${status}</small></div><div class="zone-bottom">${sheepLabel}</div></div>`
+        return `<div class="zone-item${useStallBackground ? ' stall-zone-item' : ''}" data-paddock-id="${p.id}" data-zone-id="${z.id}">${canDeleteZone ? `<button type="button" class="zone-delete-button" data-paddock-id="${p.id}" data-zone-id="${z.id}" aria-label="Zone verwijderen">−</button>` : ''}<div class="zone-header"><div class="zone-title-row"><button type="button" class="zone-edit-button" data-paddock-id="${p.id}" data-zone-id="${z.id}" aria-label="Zone bewerken">✎</button><strong>${z.name}</strong></div><div class="zone-metrics">${zoneArea ? `<span class="zone-metric">${zoneArea}</span>` : ''}${zonePerimeter ? `<span class="zone-metric">${zonePerimeter}</span>` : ''}</div><small>${status}</small></div><div class="zone-bottom">${sheepLabel}</div></div>`
       }).join('')}
       <button type="button" class="zone-item add-zone-button${isStalPaddock(p) ? ' stall-zone-item' : ''}" data-paddock-id="${p.id}" aria-label="Zone toevoegen">
         <span class="add-zone-icon">+</span>
@@ -467,6 +477,7 @@ function isStalZone(paddock, zone){
 let activeMoveSheepId = null
 let activeEditSheepId = null
 let activeEditPaddockId = null
+let activeEditZoneRef = null
 let pendingZoneDeletion = null
 let pendingPaddockDeletion = null
 let pendingZoneBulkMove = null
@@ -834,6 +845,38 @@ function closeEditPaddockModal(){
   closeModal('paddock-edit-modal')
 }
 
+function openEditZoneModal(paddockId, zoneId){
+  const paddock = getPaddock(paddockId)
+  const zone = getZone(paddockId, zoneId)
+  if(!paddock || !zone) return
+  activeEditZoneRef = { paddockId, zoneId }
+
+  const paddockNameLabel = document.getElementById('zone-edit-modal-paddock-name')
+  const nameInput = document.getElementById('zone-edit-name')
+  const areaInput = document.getElementById('zone-edit-area')
+  const perimeterInput = document.getElementById('zone-edit-perimeter')
+  if(paddockNameLabel){
+    paddockNameLabel.textContent = paddock.name
+  }
+  if(nameInput){
+    nameInput.value = zone.name || ''
+    nameInput.disabled = isStalZone(paddock, zone)
+  }
+  if(areaInput){
+    areaInput.value = zone.area ?? ''
+  }
+  if(perimeterInput){
+    perimeterInput.value = zone.perimeter ?? ''
+  }
+
+  openModal('zone-edit-modal')
+}
+
+function closeEditZoneModal(){
+  activeEditZoneRef = null
+  closeModal('zone-edit-modal')
+}
+
 function openModal(id){
   const modal = document.getElementById(id)
   if(!modal) return
@@ -891,6 +934,9 @@ document.getElementById('sheep-tag-edit-modal-backdrop')?.addEventListener('clic
 
 document.getElementById('zone-modal-close')?.addEventListener('click', () => closeModal('zone-modal'))
 document.getElementById('zone-modal-backdrop')?.addEventListener('click', () => closeModal('zone-modal'))
+
+document.getElementById('zone-edit-modal-close')?.addEventListener('click', closeEditZoneModal)
+document.getElementById('zone-edit-modal-backdrop')?.addEventListener('click', closeEditZoneModal)
 
 document.getElementById('zone-delete-move-modal-close')?.addEventListener('click', closeZoneDeleteMoveModal)
 document.getElementById('zone-delete-move-modal-backdrop')?.addEventListener('click', closeZoneDeleteMoveModal)
@@ -954,6 +1000,38 @@ document.getElementById('paddock-edit-form')?.addEventListener('submit', e => {
   }
 
   save(); render(); closeEditPaddockModal()
+})
+
+document.getElementById('zone-edit-form')?.addEventListener('submit', e => {
+  e.preventDefault()
+  if(!activeEditZoneRef) return
+
+  const paddock = getPaddock(activeEditZoneRef.paddockId)
+  const zone = getZone(activeEditZoneRef.paddockId, activeEditZoneRef.zoneId)
+  if(!paddock || !zone) return
+
+  const nameInput = document.getElementById('zone-edit-name')
+  const areaInput = document.getElementById('zone-edit-area')
+  const perimeterInput = document.getElementById('zone-edit-perimeter')
+  const nextName = nameInput ? nameInput.value.trim() : ''
+  const nextArea = areaInput && areaInput.value.trim() !== '' ? Number(areaInput.value.trim()) : null
+  const nextPerimeter = perimeterInput && perimeterInput.value.trim() !== '' ? Number(perimeterInput.value.trim()) : null
+
+  const beforeName = zone.name
+  const beforeArea = zone.area
+  const beforePerimeter = zone.perimeter
+
+  if(!isStalZone(paddock, zone) && nextName){
+    zone.name = nextName
+  }
+  zone.area = nextArea
+  zone.perimeter = nextPerimeter
+
+  if(beforeName !== zone.name || beforeArea !== zone.area || beforePerimeter !== zone.perimeter){
+    addHistory('zone', `Zone bijgewerkt: ${paddock.name} / ${beforeName} -> ${zone.name}${beforeArea !== zone.area ? `, oppervlakte ${beforeArea ?? '-'} -> ${zone.area ?? '-'}` : ''}${beforePerimeter !== zone.perimeter ? `, omtrek ${beforePerimeter ?? '-'} -> ${zone.perimeter ?? '-'}` : ''}`)
+  }
+
+  save(); render(); closeEditZoneModal()
 })
 
 document.getElementById('sheep-modal-form')?.addEventListener('submit', e => {
@@ -1231,6 +1309,15 @@ document.getElementById('paddock-list').addEventListener('click', e => {
     return
   }
 
+  const editZoneButton = e.target.closest('.zone-edit-button')
+  if(editZoneButton){
+    const paddockId = editZoneButton.dataset.paddockId
+    const zoneId = editZoneButton.dataset.zoneId
+    if(!paddockId || !zoneId) return
+    openEditZoneModal(paddockId, zoneId)
+    return
+  }
+
   const deletePaddockButton = e.target.closest('.paddock-delete-button')
   if(deletePaddockButton){
     const paddockId = deletePaddockButton.dataset.paddockId
@@ -1293,6 +1380,8 @@ document.getElementById('paddock-list').addEventListener('click', e => {
     document.getElementById('zone-modal-paddock-name').textContent = paddock.name
     document.getElementById('zone-modal-form').dataset.paddockId = paddockId
     document.getElementById('zone-modal-name').value = ''
+    document.getElementById('zone-modal-area').value = ''
+    document.getElementById('zone-modal-perimeter').value = ''
     openModal('zone-modal')
     return
   }
@@ -1313,10 +1402,14 @@ document.getElementById('zone-modal-form')?.addEventListener('submit', e => {
   e.preventDefault()
   const paddockId = e.target.dataset.paddockId
   const zoneName = document.getElementById('zone-modal-name').value.trim()
+  const areaValue = document.getElementById('zone-modal-area').value.trim()
+  const perimeterValue = document.getElementById('zone-modal-perimeter').value.trim()
+  const area = areaValue === '' ? null : Number(areaValue)
+  const perimeter = perimeterValue === '' ? null : Number(perimeterValue)
   if(!zoneName || !paddockId) return
   const paddock = getPaddock(paddockId)
   if(!paddock) return
-  paddock.zones.push({id:uid(),name:zoneName,emptySince: Date.now()})
+  paddock.zones.push({id:uid(),name:zoneName,area,perimeter,emptySince: Date.now()})
   addHistory('zone', `Zone ${zoneName} toegevoegd in weide ${paddock.name}`)
   save(); render(); closeModal('zone-modal')
 })

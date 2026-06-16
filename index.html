@@ -106,7 +106,33 @@
       </div>
       <form id="zone-modal-form" class="group-form">
         <input id="zone-modal-name" placeholder="Zone naam" required>
+        <input id="zone-modal-area" type="number" min="0" step="0.01" placeholder="Oppervlakte (m2)">
+        <input id="zone-modal-perimeter" type="number" min="0" step="0.01" placeholder="Omtrek (m)">
         <button type="submit">Toevoegen</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="zone-edit-modal" class="modal hidden" aria-hidden="true">
+    <div id="zone-edit-modal-backdrop" class="modal-backdrop"></div>
+    <div class="modal-panel">
+      <button type="button" id="zone-edit-modal-close" class="modal-close">×</button>
+      <h2>Zone bewerken</h2>
+      <div class="modal-field">
+        <label>Weide</label>
+        <div id="zone-edit-modal-paddock-name"></div>
+      </div>
+      <form id="zone-edit-form" class="group-form">
+        <input id="zone-edit-name" placeholder="Zone naam" required>
+        <div class="modal-field">
+          <label for="zone-edit-area">Oppervlakte (m2)</label>
+          <input id="zone-edit-area" type="number" min="0" step="0.01" placeholder="Oppervlakte">
+        </div>
+        <div class="modal-field">
+          <label for="zone-edit-perimeter">Omtrek (m)</label>
+          <input id="zone-edit-perimeter" type="number" min="0" step="0.01" placeholder="Omtrek">
+        </div>
+        <button type="submit">Opslaan</button>
       </form>
     </div>
   </div>
