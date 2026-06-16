@@ -10,6 +10,7 @@
           "name": "Stal",
           "area": 8,
           "perimeter": 0,
+          "notes": "Stal Zandvlietse Dorpstaat 38/2",
           "emptySince": null
         }
       ]
@@ -24,6 +25,7 @@
           "name": "Intrede van Napoleon",
           "area": 500,
           "perimeter": 90,
+          "notes": "",
           "emptySince": null
         },
         {
@@ -31,7 +33,8 @@
           "name": "Retabel van Averbode",
           "area": 500,
           "perimeter": 100,
-          "emptySince": null
+          "notes": "",
+          "emptySince": 1781614504602
         }
       ]
     },
@@ -45,7 +48,8 @@
           "name": "De Nachtwacht",
           "area": 250,
           "perimeter": 70,
-          "emptySince": null
+          "notes": "",
+          "emptySince": 1781622114205
         }
       ]
     },
@@ -59,6 +63,7 @@
           "name": "Mona Lisa",
           "area": 20,
           "perimeter": 20,
+          "notes": "",
           "emptySince": 1781607284770
         }
       ]
@@ -69,59 +74,356 @@
       "id": "ez5riho",
       "tag": "Mondriaan",
       "earmark": null,
+      "birthDate": "2025-02-16",
+      "injections": [
+        {
+          "id": "8mmujd7",
+          "date": "2026-06-16",
+          "product": "Ontworming",
+          "repeatDate": ""
+        },
+        {
+          "id": "sajcmvb",
+          "date": "2026-06-16",
+          "product": "Test",
+          "repeatDate": "2027-06-16"
+        }
+      ],
+      "shearings": [
+        {
+          "id": "z7y6lno",
+          "date": "2026-06-16"
+        },
+        {
+          "id": "uq2tubv",
+          "date": "2026-06-16"
+        },
+        {
+          "id": "mzsxkf5",
+          "date": "2026-06-16"
+        }
+      ],
       "gender": "female",
       "motherId": null,
       "fatherId": null,
       "paddockId": "n65pnkh",
-      "zoneId": "ccr94d6",
-      "lastUpdated": 1781608749865
+      "zoneId": "x9hrbxi",
+      "lastUpdated": 1781632929728
     },
     {
       "id": "93z2ya6",
       "tag": "Rubens",
       "earmark": null,
+      "birthDate": "2025-05-01",
+      "injections": [
+        {
+          "id": "jx3ea64",
+          "date": "2026-06-16",
+          "product": "Ontworming",
+          "repeatDate": ""
+        }
+      ],
+      "shearings": [
+        {
+          "id": "4oserqz",
+          "date": "2026-06-16"
+        },
+        {
+          "id": "3bafs59",
+          "date": "2026-06-16"
+        },
+        {
+          "id": "8y4ye8t",
+          "date": "2026-06-16"
+        }
+      ],
       "gender": "male",
       "motherId": null,
       "fatherId": null,
       "paddockId": "n65pnkh",
       "zoneId": "x9hrbxi",
-      "lastUpdated": 1781608752774
+      "lastUpdated": 1781632560283
     },
     {
       "id": "sxcmdrk",
       "tag": "Van Gogh",
       "earmark": "AB12345",
+      "birthDate": "2024-08-08",
+      "injections": [
+        {
+          "id": "xo9cbwx",
+          "date": "2026-06-16",
+          "product": "Ontworming",
+          "repeatDate": ""
+        }
+      ],
+      "shearings": [
+        {
+          "id": "62ogeut",
+          "date": "2026-06-16"
+        },
+        {
+          "id": "eodrnln",
+          "date": "2026-06-16"
+        },
+        {
+          "id": "dzdvw9e",
+          "date": "2026-06-16"
+        }
+      ],
       "gender": "male",
       "motherId": "ez5riho",
       "fatherId": "93z2ya6",
       "paddockId": "flqsiwl",
       "zoneId": "x27gavg",
-      "lastUpdated": 1781608756013
+      "lastUpdated": 1781637731080
     },
     {
       "id": "tv1a5yt",
       "tag": "Picasso",
       "earmark": "123456789",
+      "birthDate": "2025-07-02",
+      "injections": [
+        {
+          "id": "bx5o629",
+          "date": "2026-06-16",
+          "product": "Ontworming",
+          "repeatDate": ""
+        },
+        {
+          "id": "kwteuo8",
+          "date": "2026-06-16",
+          "product": "Ontworming",
+          "repeatDate": "2027-06-15"
+        }
+      ],
+      "shearings": [
+        {
+          "id": "9ts8hqo",
+          "date": "2026-06-16"
+        },
+        {
+          "id": "dm0igfi",
+          "date": "2026-06-16"
+        },
+        {
+          "id": "qjcu2qc",
+          "date": "2026-06-16"
+        }
+      ],
       "gender": "female",
       "motherId": null,
       "fatherId": null,
-      "paddockId": "3ecycrj",
-      "zoneId": "5hdw7ho",
-      "lastUpdated": 1781608762395
+      "paddockId": "n65pnkh",
+      "zoneId": "x9hrbxi",
+      "lastUpdated": 1781637983166
     },
     {
       "id": "x0t67n4",
       "tag": "Da Vinci",
       "earmark": "42323432324",
+      "birthDate": "2025-04-03",
+      "injections": [
+        {
+          "id": "tu672ul",
+          "date": "2026-06-16",
+          "product": "Ontworming",
+          "repeatDate": ""
+        }
+      ],
+      "shearings": [
+        {
+          "id": "sfhnpff",
+          "date": "2026-06-16"
+        },
+        {
+          "id": "g4va87l",
+          "date": "2026-06-16"
+        },
+        {
+          "id": "fmt7h75",
+          "date": "2026-06-16"
+        },
+        {
+          "id": "hubfp3h",
+          "date": "2026-06-16"
+        }
+      ],
       "gender": "female",
       "motherId": null,
       "fatherId": null,
       "paddockId": "n65pnkh",
-      "zoneId": "ccr94d6",
-      "lastUpdated": 1781608778636
+      "zoneId": "x9hrbxi",
+      "lastUpdated": 1781637994749
+    },
+    {
+      "id": "r3d6fyu",
+      "tag": "Magritte",
+      "earmark": null,
+      "birthDate": "2024-10-03",
+      "injections": [
+        {
+          "id": "plg7lu5",
+          "date": "2026-06-16",
+          "product": "Ontworming",
+          "repeatDate": ""
+        }
+      ],
+      "shearings": [
+        {
+          "id": "aprme1s",
+          "date": "2026-06-16"
+        },
+        {
+          "id": "0mgcf94",
+          "date": "2026-06-16"
+        },
+        {
+          "id": "ophkbmy",
+          "date": "2026-06-16"
+        }
+      ],
+      "gender": "male",
+      "motherId": null,
+      "fatherId": null,
+      "paddockId": "n65pnkh",
+      "zoneId": "x9hrbxi",
+      "lastUpdated": 1781632560283
     }
   ],
   "history": [
+    {
+      "id": "ytv2s0b",
+      "ts": 1781637994749,
+      "entity": "scheren",
+      "message": "Scheren geregistreerd voor Da Vinci op 16-06-2026"
+    },
+    {
+      "id": "9dzqhxv",
+      "ts": 1781637983167,
+      "entity": "injectie",
+      "message": "Injectie geregistreerd voor Picasso: Ontworming (16-06-2026, herhalen tegen 15-06-2027)"
+    },
+    {
+      "id": "sp380hk",
+      "ts": 1781637731080,
+      "entity": "schaap",
+      "message": "Van Gogh verplaatst van MAS / Intrede van Napoleon naar Stal / Stal"
+    },
+    {
+      "id": "6xe6ju1",
+      "ts": 1781637702982,
+      "entity": "systeem",
+      "message": "Gegevens geïmporteerd uit bestand"
+    },
+    {
+      "id": "m3kkqlh",
+      "ts": 1781632929729,
+      "entity": "injectie",
+      "message": "Injectie geregistreerd voor Mondriaan: Test (16-06-2026, herhalen tegen 16-06-2027)"
+    },
+    {
+      "id": "8wqy6x8",
+      "ts": 1781632560283,
+      "entity": "scheren",
+      "message": "Scheren geregistreerd in MAS op 16-06-2026 voor 6 schapen"
+    },
+    {
+      "id": "umpa69n",
+      "ts": 1781632465827,
+      "entity": "scheren",
+      "message": "Scheren geregistreerd in MAS op 16-06-2026 voor 6 schapen"
+    },
+    {
+      "id": "ob47eao",
+      "ts": 1781632463994,
+      "entity": "scheren",
+      "message": "Scheren geregistreerd in MAS op 16-06-2026 voor 6 schapen"
+    },
+    {
+      "id": "sdmyapz",
+      "ts": 1781632420429,
+      "entity": "injectie",
+      "message": "Injectie geregistreerd in MAS: Ontworming (16-06-2026, niet herhalen) voor 6 schapen"
+    },
+    {
+      "id": "6bc4ezb",
+      "ts": 1781632257653,
+      "entity": "injectie",
+      "message": "Injectie geregistreerd in Louvre: Ontwormen (16-06-2026, niet herhalen) voor 0 schapen"
+    },
+    {
+      "id": "db5w7x7",
+      "ts": 1781624756827,
+      "entity": "schaap",
+      "message": "Magritte verplaatst van Stal / Stal naar MAS / Intrede van Napoleon"
+    },
+    {
+      "id": "8l1594h",
+      "ts": 1781624747777,
+      "entity": "schaap",
+      "message": "Magritte toegevoegd in Stal / Stal"
+    },
+    {
+      "id": "xem18mk",
+      "ts": 1781624695099,
+      "entity": "schaap",
+      "message": "Mondriaan, Rubens, Van Gogh, Picasso, Da Vinci verplaatst van Stal / Stal naar MAS / Intrede van Napoleon"
+    },
+    {
+      "id": "16ziavb",
+      "ts": 1781622114205,
+      "entity": "schaap",
+      "message": "Mondriaan, Rubens, Van Gogh, Da Vinci verplaatst van Rijksmuseum / De Nachtwacht naar Stal / Stal"
+    },
+    {
+      "id": "sjtnce8",
+      "ts": 1781622107222,
+      "entity": "schaap",
+      "message": "Picasso verplaatst van Rijksmuseum / De Nachtwacht naar Stal / Stal"
+    },
+    {
+      "id": "xw50vyh",
+      "ts": 1781618006436,
+      "entity": "zone",
+      "message": "Zone Stal / Stal bijgewerkt: notities bijgewerkt"
+    },
+    {
+      "id": "ifsbzwl",
+      "ts": 1781617702889,
+      "entity": "zone",
+      "message": "Zone bijgewerkt: notities bijgewerkt"
+    },
+    {
+      "id": "n98nats",
+      "ts": 1781614510402,
+      "entity": "schaap",
+      "message": "Rubens verplaatst van MAS / Intrede van Napoleon naar Rijksmuseum / De Nachtwacht"
+    },
+    {
+      "id": "b435m27",
+      "ts": 1781614504602,
+      "entity": "schaap",
+      "message": "Mondriaan, Da Vinci verplaatst van MAS / Retabel van Averbode naar Rijksmuseum / De Nachtwacht"
+    },
+    {
+      "id": "9jpmcg3",
+      "ts": 1781614495690,
+      "entity": "schaap",
+      "message": "Van Gogh, Picasso verplaatst van Stal / Stal naar Rijksmuseum / De Nachtwacht"
+    },
+    {
+      "id": "cumhr0k",
+      "ts": 1781610961872,
+      "entity": "schaap",
+      "message": "Picasso verplaatst van Rijksmuseum / De Nachtwacht naar Stal / Stal"
+    },
+    {
+      "id": "gq15izu",
+      "ts": 1781610837633,
+      "entity": "systeem",
+      "message": "Gegevens geïmporteerd uit bestand"
+    },
     {
       "id": "vta4tdz",
       "ts": 1781608778636,
