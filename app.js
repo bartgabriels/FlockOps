@@ -847,7 +847,7 @@ function renderPaddock(p){
         const zonePerimeter = z.perimeter !== null ? `${z.perimeter} m` : ''
         const bulkMoveButton = sheepCount > 1 ? `<button type="button" class="zone-bulk-move-button" data-paddock-id="${p.id}" data-zone-id="${z.id}">${t('zone.bulkMove')}</button>` : ''
         const sheepLabel = sheepCount
-          ? `<div class="zone-sheep-list${sheepCount > 6 ? ' is-scrollable' : ''}">${sheepInZone.map(s => `<button type="button" class="zone-sheep-link" data-sheep-id="${s.id}" aria-label="${t('aria.moveSheep', { tag: s.tag })}">${sheepIcon()}${s.tag}</button>`).join('')}</div>${bulkMoveButton}`
+          ? `<div class="zone-sheep-list${sheepCount > 3 ? ' is-scrollable' : ''}">${sheepInZone.map(s => `<button type="button" class="zone-sheep-link" data-sheep-id="${s.id}" aria-label="${t('aria.moveSheep', { tag: s.tag })}">${sheepIcon()}${s.tag}</button>`).join('')}</div>${bulkMoveButton}`
           : t('zone.sheep.empty')
         const stallZone = isStalZone(p, z)
         const useStallBackground = isStalPaddock(p)
