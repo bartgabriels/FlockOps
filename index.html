@@ -97,6 +97,29 @@
     </div>
   </div>
 
+  <div id="zone-bulk-move-modal" class="modal hidden" aria-hidden="true">
+    <div id="zone-bulk-move-modal-backdrop" class="modal-backdrop"></div>
+    <div class="modal-panel">
+      <button type="button" id="zone-bulk-move-modal-close" class="modal-close">×</button>
+      <h2>Verplaats alle dieren</h2>
+      <div class="modal-field">
+        <label>Bronzone</label>
+        <div id="zone-bulk-move-source-name"></div>
+      </div>
+      <div class="modal-field">
+        <label>Aantal schapen</label>
+        <div id="zone-bulk-move-sheep-count"></div>
+      </div>
+      <form id="zone-bulk-move-form" class="group-form">
+        <select id="zone-bulk-move-target-paddock-modal"></select>
+        <select id="zone-bulk-move-target-zone-modal" disabled>
+          <option value="">Kies eerst een weide</option>
+        </select>
+        <button type="submit" id="zone-bulk-move-submit" disabled>Verplaats alle dieren</button>
+      </form>
+    </div>
+  </div>
+
   <div id="zone-delete-move-modal" class="modal hidden" aria-hidden="true">
     <div id="zone-delete-move-modal-backdrop" class="modal-backdrop"></div>
     <div class="modal-panel">

@@ -1,3 +1,5 @@
+const KEY = 'schapentracker:data'
+const state = { paddocks: [], sheep: [] }
 const expandedPaddocks = new Set()
 
 function ensureDefaultStal(){
@@ -141,14 +143,8 @@ function render(){
       </button>
     `
 
-  if(sheepPaddockModal){
-    populatePaddockSelect(sheepPaddockModal)
-    sheepPaddockModal.value = ''
-  }
-
-  if(sheepZoneModal){
-    sheepZoneModal.innerHTML = '<option value="">Kies eerst een weide</option>'
-    sheepZoneModal.disabled = true
+  if(sheepPaddockModal && sheepZoneModal){
+    setSheepModalDefaultSelection()
   }
 
   if(movePaddockModal){
@@ -182,7 +178,7 @@ function renderPaddock(p){
         const sheepCount = sheepInZone.length
         const status = z.emptySince ? `Leeg sinds ${daysSince(z.emptySince)} dagen` : `Bezet${sheepCount ? ` (${sheepCount})` : ''}`
         const sheepLabel = sheepCount
-          ? sheepInZone.map(s => `<button type="button" class="zone-sheep-link" data-sheep-id="${s.id}" aria-label="Verplaats ${s.tag}">${sheepIcon()}${s.tag}</button>`).join(' ')
+          ? `<div class="zone-sheep-list${sheepCount > 6 ? ' is-scrollable' : ''}">${sheepInZone.map(s => `<button type="button" class="zone-sheep-link" data-sheep-id="${s.id}" aria-label="Verplaats ${s.tag}">${sheepIcon()}${s.tag}</button>`).join('')}</div><button type="button" class="zone-bulk-move-button" data-paddock-id="${p.id}" data-zone-id="${z.id}">Verplaats alle dieren</button>`
           : 'Geen schaap'
         const stallZone = isStalZone(p, z)
         const useStallBackground = isStalPaddock(p)
@@ -194,7 +190,7 @@ function renderPaddock(p){
       </button>
     </div>
   </div>`
-
+}
 
 function paddockName(id){
   const p = state.paddocks.find(x=>x.id===id)
@@ -211,6 +207,40 @@ function getPaddock(id){ return state.paddocks.find(x => x.id === id) }
 function getZone(paddockId, zoneId){
   const paddock = getPaddock(paddockId)
   return paddock ? paddock.zones.find(x => x.id === zoneId) : null
+}
+
+function setSheepModalDefaultSelection(){
+  const sheepPaddockModal = document.getElementById('sheep-paddock-modal')
+  const sheepZoneModal = document.getElementById('sheep-zone-modal')
+  if(!sheepPaddockModal || !sheepZoneModal) return
+
+  populatePaddockSelect(sheepPaddockModal)
+
+  const stalPaddock = state.paddocks.find(p => isStalPaddock(p))
+  const selectedPaddock = stalPaddock || state.paddocks[0]
+  if(!selectedPaddock){
+    sheepZoneModal.innerHTML = '<option value="">Kies eerst een weide</option>'
+    sheepZoneModal.disabled = true
+    return
+  }
+
+  sheepPaddockModal.value = selectedPaddock.id
+  if(selectedPaddock.zones.length){
+    sheepZoneModal.innerHTML = `<option value="" selected disabled hidden>Kies zone</option>` + selectedPaddock.zones.map(z => `<option value="${z.id}">${z.name}</option>`).join('')
+    sheepZoneModal.disabled = false
+
+    const stalZone = selectedPaddock.zones.find(z => typeof z.name === 'string' && z.name.toLowerCase() === 'stal')
+    if(stalZone){
+      sheepZoneModal.value = stalZone.id
+    } else if(selectedPaddock.zones.length === 1){
+      sheepZoneModal.value = selectedPaddock.zones[0].id
+    } else {
+      sheepZoneModal.value = ''
+    }
+  } else {
+    sheepZoneModal.innerHTML = '<option value="">Geen zones beschikbaar</option>'
+    sheepZoneModal.disabled = true
+  }
 }
 
 function populatePaddockSelect(select){
@@ -241,6 +271,7 @@ function isStalZone(paddock, zone){
 let activeMoveSheepId = null
 let pendingZoneDeletion = null
 let pendingPaddockDeletion = null
+let pendingZoneBulkMove = null
 
 function availableTargetZones(targetPaddockId, sourcePaddockId = pendingZoneDeletion?.sourcePaddockId, sourceZoneId = pendingZoneDeletion?.sourceZoneId){
   const targetPaddock = getPaddock(targetPaddockId)
@@ -338,6 +369,66 @@ function closeZoneDeleteMoveModal(){
 
 function availableTargetPaddocksForDelete(sourcePaddockId){
   return state.paddocks.filter(p => p.id !== sourcePaddockId && p.zones.length > 0)
+}
+
+function populateZoneBulkMoveTargets(selectedPaddockId){
+  const paddockSelect = document.getElementById('zone-bulk-move-target-paddock-modal')
+  const zoneSelect = document.getElementById('zone-bulk-move-target-zone-modal')
+  const submitBtn = document.getElementById('zone-bulk-move-submit')
+  if(!paddockSelect || !zoneSelect || !pendingZoneBulkMove) return
+
+  const targetPaddocks = state.paddocks.filter(p => p.zones.length > 0)
+  paddockSelect.innerHTML = `<option value="" selected disabled hidden>Kies weide</option>` + targetPaddocks.map(p => `<option value="${p.id}"${p.id === selectedPaddockId ? ' selected' : ''}>${p.name}</option>`).join('')
+
+  const targetPaddockId = selectedPaddockId || paddockSelect.value
+  const targetPaddock = getPaddock(targetPaddockId)
+  const zones = targetPaddock ? targetPaddock.zones : []
+  if(zones.length){
+    zoneSelect.innerHTML = `<option value="" selected disabled hidden>Kies zone</option>` + zones.map(z => `<option value="${z.id}">${z.name}</option>`).join('')
+    zoneSelect.disabled = false
+    if(zones.length === 1){
+      zoneSelect.value = zones[0].id
+      if(submitBtn) submitBtn.disabled = false
+    } else {
+      zoneSelect.value = ''
+      if(submitBtn) submitBtn.disabled = true
+    }
+  } else {
+    zoneSelect.innerHTML = '<option value="">Geen zones beschikbaar</option>'
+    zoneSelect.disabled = true
+    if(submitBtn) submitBtn.disabled = true
+  }
+}
+
+function openZoneBulkMoveModal(sourcePaddockId, sourceZoneId){
+  const sourcePaddock = getPaddock(sourcePaddockId)
+  const sourceZone = getZone(sourcePaddockId, sourceZoneId)
+  if(!sourcePaddock || !sourceZone) return
+
+  const sheepInZone = state.sheep.filter(s => s.paddockId === sourcePaddockId && s.zoneId === sourceZoneId)
+  if(!sheepInZone.length){
+    alert('Geen schapen in deze zone om te verplaatsen.')
+    return
+  }
+
+  pendingZoneBulkMove = { sourcePaddockId, sourceZoneId }
+
+  const sourceLabel = document.getElementById('zone-bulk-move-source-name')
+  const sheepLabel = document.getElementById('zone-bulk-move-sheep-count')
+  if(sourceLabel){
+    sourceLabel.textContent = `${sourcePaddock.name} / ${sourceZone.name}`
+  }
+  if(sheepLabel){
+    sheepLabel.textContent = `${sheepInZone.length} schaap${sheepInZone.length === 1 ? '' : 'en'}`
+  }
+
+  populateZoneBulkMoveTargets(sourcePaddockId)
+  openModal('zone-bulk-move-modal')
+}
+
+function closeZoneBulkMoveModal(){
+  pendingZoneBulkMove = null
+  closeModal('zone-bulk-move-modal')
 }
 
 function populatePaddockDeleteMoveTargets(selectedPaddockId){
@@ -516,6 +607,9 @@ document.getElementById('zone-modal-backdrop')?.addEventListener('click', () => 
 document.getElementById('zone-delete-move-modal-close')?.addEventListener('click', closeZoneDeleteMoveModal)
 document.getElementById('zone-delete-move-modal-backdrop')?.addEventListener('click', closeZoneDeleteMoveModal)
 
+document.getElementById('zone-bulk-move-modal-close')?.addEventListener('click', closeZoneBulkMoveModal)
+document.getElementById('zone-bulk-move-modal-backdrop')?.addEventListener('click', closeZoneBulkMoveModal)
+
 document.getElementById('paddock-delete-move-modal-close')?.addEventListener('click', closePaddockDeleteMoveModal)
 document.getElementById('paddock-delete-move-modal-backdrop')?.addEventListener('click', closePaddockDeleteMoveModal)
 
@@ -561,6 +655,9 @@ if(sheepPaddockModal){
     if(selectedPaddock && selectedPaddock.zones.length){
       sheepZoneModal.innerHTML = `<option value="" selected disabled hidden>Kies zone</option>` + selectedPaddock.zones.map(z => `<option value="${z.id}">${z.name}</option>`).join('')
       sheepZoneModal.disabled = false
+      if(selectedPaddock.zones.length === 1){
+        sheepZoneModal.value = selectedPaddock.zones[0].id
+      }
     } else {
       sheepZoneModal.innerHTML = selectedPaddock ? '<option value="">Geen zones beschikbaar</option>' : '<option value="">Kies eerst een weide</option>'
       sheepZoneModal.disabled = !selectedPaddock || selectedPaddock.zones.length === 0
@@ -598,6 +695,23 @@ if(zoneDeleteTargetZoneModal){
     const submitBtn = document.getElementById('zone-delete-move-submit')
     if(submitBtn){
       submitBtn.disabled = !zoneDeleteTargetZoneModal.value
+    }
+  })
+}
+
+const zoneBulkMoveTargetPaddockModal = document.getElementById('zone-bulk-move-target-paddock-modal')
+if(zoneBulkMoveTargetPaddockModal){
+  zoneBulkMoveTargetPaddockModal.addEventListener('change', () => {
+    populateZoneBulkMoveTargets(zoneBulkMoveTargetPaddockModal.value)
+  })
+}
+
+const zoneBulkMoveTargetZoneModal = document.getElementById('zone-bulk-move-target-zone-modal')
+if(zoneBulkMoveTargetZoneModal){
+  zoneBulkMoveTargetZoneModal.addEventListener('change', () => {
+    const submitBtn = document.getElementById('zone-bulk-move-submit')
+    if(submitBtn){
+      submitBtn.disabled = !zoneBulkMoveTargetZoneModal.value
     }
   })
 }
@@ -663,6 +777,25 @@ document.getElementById('paddock-delete-move-form')?.addEventListener('submit', 
   save(); render(); closePaddockDeleteMoveModal()
 })
 
+document.getElementById('zone-bulk-move-form')?.addEventListener('submit', e => {
+  e.preventDefault()
+  if(!pendingZoneBulkMove) return
+
+  const targetPaddockId = document.getElementById('zone-bulk-move-target-paddock-modal').value
+  const targetZoneId = document.getElementById('zone-bulk-move-target-zone-modal').value
+  if(!targetPaddockId || !targetZoneId) return
+
+  state.sheep.forEach(s => {
+    if(s.paddockId === pendingZoneBulkMove.sourcePaddockId && s.zoneId === pendingZoneBulkMove.sourceZoneId){
+      s.paddockId = targetPaddockId
+      s.zoneId = targetZoneId
+      s.lastUpdated = Date.now()
+    }
+  })
+
+  save(); render(); closeZoneBulkMoveModal()
+})
+
 document.getElementById('move-modal-close')?.addEventListener('click', () => closeModal('move-modal'))
 
 document.getElementById('move-modal-backdrop')?.addEventListener('click', () => closeModal('move-modal'))
@@ -701,6 +834,15 @@ document.getElementById('paddock-list').addEventListener('click', e => {
     const sheepId = zoneSheepLink.dataset.sheepId
     if(!sheepId) return
     openMoveModal(sheepId)
+    return
+  }
+
+  const zoneBulkMoveButton = e.target.closest('.zone-bulk-move-button')
+  if(zoneBulkMoveButton){
+    const sourcePaddockId = zoneBulkMoveButton.dataset.paddockId
+    const sourceZoneId = zoneBulkMoveButton.dataset.zoneId
+    if(!sourcePaddockId || !sourceZoneId) return
+    openZoneBulkMoveModal(sourcePaddockId, sourceZoneId)
     return
   }
 
