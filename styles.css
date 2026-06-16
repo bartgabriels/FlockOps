@@ -1016,6 +1016,11 @@ form button{
   gap:8px;
 }
 
+.sheep-actions > button{
+  height:28px;
+  min-height:28px;
+}
+
 .sheep-injection-button,
 .sheep-shearing-button,
 .move-button{
