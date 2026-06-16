@@ -125,10 +125,6 @@ function render(){
       </button>
     `
 
-  if(state.sheep.length === 0){
-    sheepList.innerHTML = '<div class="empty">Geen schapen</div>' + `\n      <button type="button" class="sheep-card add-sheep-card" id="add-sheep-block" aria-label="Schaap toevoegen">\n        <span class="add-zone-icon">+</span>\n      </button>`
-  }
-
   if(sheepPaddockModal){
     populatePaddockSelect(sheepPaddockModal)
     sheepPaddockModal.value = ''
@@ -155,17 +151,20 @@ function renderPaddock(p){
       <strong>${p.name}</strong>
       <span class="badge">${p.zones.length} zone(s)</span>
     </div>
-    <div class="zone-list" ${isExpanded ? '' : 'style="display:none"'}>
-      ${p.zones.map(z => {
-        const sheepNames = zoneSheepNames(p.id, z.id)
-        const sheepCount = sheepNames.length
-        const status = z.emptySince ? `Leeg sinds ${daysSince(z.emptySince)} dagen` : `Bezet${sheepCount ? ` (${sheepCount})` : ''}`
-        const sheepLabel = sheepCount ? sheepNames.map(name => `${sheepIcon()}${name}`).join(' ') : 'Geen schaap'
-        return `<div class="zone-item" data-paddock-id="${p.id}" data-zone-id="${z.id}"><button type="button" class="zone-delete-button" data-paddock-id="${p.id}" data-zone-id="${z.id}" aria-label="Zone verwijderen">−</button><div><strong>${z.name}</strong><small>${status}</small></div><div class="zone-bottom">${sheepLabel}</div></div>`
-      }).join('')}
-      <button type="button" class="zone-item add-zone-button" data-paddock-id="${p.id}" aria-label="Zone toevoegen">
-        <span class="add-zone-icon">+</span>
-      </button>
+    <div class="card-body">
+      <div class="zone-list" ${isExpanded ? '' : 'style="display:none"'}>
+        ${p.zones.map(z => {
+          const sheepNames = zoneSheepNames(p.id, z.id)
+          const sheepCount = sheepNames.length
+          const status = z.emptySince ? `Leeg sinds ${daysSince(z.emptySince)} dagen` : `Bezet${sheepCount ? ` (${sheepCount})` : ''}`
+          const sheepLabel = sheepCount ? sheepNames.map(name => `${sheepIcon()}${name}`).join(' ') : 'Geen schaap'
+          return `<div class="zone-item" data-paddock-id="${p.id}" data-zone-id="${z.id}"><button type="button" class="zone-delete-button" data-paddock-id="${p.id}" data-zone-id="${z.id}" aria-label="Zone verwijderen">−</button><div><strong>${z.name}</strong><small>${status}</small></div><div class="zone-bottom">${sheepLabel}</div></div>`
+        }).join('')}
+        <button type="button" class="zone-item add-zone-button" data-paddock-id="${p.id}" aria-label="Zone toevoegen">
+          <span class="add-zone-icon">+</span>
+        </button>
+      </div>
+      <button type="button" class="add-paddock-block" aria-label="Weide toevoegen">+</button>
     </div>
   </div>`
 }
@@ -266,6 +265,15 @@ document.getElementById('upload-data-btn')?.addEventListener('click', () => {
   document.getElementById('upload-data-input')?.click()
 })
 
+document.getElementById('clear-data-btn')?.addEventListener('click', () => {
+  if(!confirm('Weet je zeker dat je alle gegevens wilt wissen? Dit kan niet ongedaan worden gemaakt.')) return
+  state.paddocks = []
+  state.sheep = []
+  expandedPaddocks.clear()
+  localStorage.removeItem(KEY)
+  render()
+})
+
 document.getElementById('upload-data-input')?.addEventListener('change', e => {
   const files = e.target.files
   if(files && files.length){
@@ -274,9 +282,6 @@ document.getElementById('upload-data-input')?.addEventListener('change', e => {
   e.target.value = ''
 })
 
-document.getElementById('open-paddock-modal-btn')?.addEventListener('click', () => {
-  openModal('paddock-modal')
-})
 
 document.getElementById('paddock-modal-close')?.addEventListener('click', () => closeModal('paddock-modal'))
 document.getElementById('paddock-modal-backdrop')?.addEventListener('click', () => closeModal('paddock-modal'))

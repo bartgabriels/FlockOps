@@ -11,16 +11,16 @@
     <h1>Schapentracker</h1>
     <div class="section-header">
       <div class="action-row">
-        <button id="download-data-btn" class="section-button">Opslaan</button>
-        <button id="upload-data-btn" class="section-button">Upload</button>
+        <button id="download-data-btn" type="button" class="section-button">Opslaan</button>
+        <button id="upload-data-btn" type="button" class="section-button">Upload</button>
+        <button id="clear-data-btn" type="button" class="section-button">Wissen</button>
       </div>
-      <input id="upload-data-input" type="file" accept="application/json" hidden>
+      <input id="upload-data-input" type="file" accept="application/json" style="display:none">
     </div>
 
     <section>
       <div class="section-header">
         <h2>Weides</h2>
-        <button id="open-paddock-modal-btn" class="section-button">Toevoegen</button>
       </div>
       <div id="paddock-list"></div>
     </section>
@@ -28,7 +28,6 @@
     <section>
       <div class="section-header">
         <h2>Schapen</h2>
-        <button id="open-sheep-modal-btn" class="section-button">Toevoegen</button>
       </div>
       <div id="sheep-list" class="sheep-grid"></div>
     </section>
