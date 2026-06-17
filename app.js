@@ -4,7 +4,16 @@ const EXIT_DOWNLOAD_KEY = 'flockops:autoDownloadOnClose'
 const AUTH_TOKEN_KEY = 'flockops:authToken'
 const AUTH_USERNAME_KEY = 'flockops:authUsername'
 const API_BASE = window.FLOCKOPS_API_BASE || 'https://flockops-hfyo.onrender.com'
-const state = { paddocks: [], sheep: [], history: [], events: [], planningItems: [] }
+const state = {
+  paddocks: [],
+  sheep: [],
+  history: [],
+  events: [],
+  planningItems: [],
+  settings: {
+    showAllOutOfFlockSheep: true
+  }
+}
 const collapsedPaddockIds = new Set()
 const expandedWeatherPaddocks = new Set()
 const weatherCache = {}
@@ -274,7 +283,11 @@ function cloudStatePayload(){
     ...state,
     history: [],
     sheep: sheepForStorage,
-    planningItems: state.planningItems.filter(item => item && item.source === 'manual')
+    planningItems: state.planningItems.filter(item => item && item.source === 'manual'),
+    settings: {
+      ...(state.settings || {}),
+      showAllOutOfFlockSheep: !!showAllOutOfFlockSheep
+    }
   }
 }
 
@@ -1213,6 +1226,13 @@ function ensureDefaultStal(){
 }
 
 function hydrateState(saved){
+  state.settings = {
+    showAllOutOfFlockSheep: saved?.settings?.showAllOutOfFlockSheep !== undefined
+      ? !!saved.settings.showAllOutOfFlockSheep
+      : true
+  }
+  showAllOutOfFlockSheep = state.settings.showAllOutOfFlockSheep
+
   state.paddocks = Array.isArray(saved?.paddocks) ? saved.paddocks.map(p => ({
     id: p.id,
     name: p.name,
@@ -1330,6 +1350,10 @@ function resetStateToDefaultConfig(){
   state.history = []
   state.events = []
   state.planningItems = []
+  state.settings = {
+    showAllOutOfFlockSheep: true
+  }
+  showAllOutOfFlockSheep = true
   collapsedPaddockIds.clear()
   expandedWeatherPaddocks.clear()
   weatherLoading.clear()
@@ -4382,7 +4406,8 @@ document.getElementById('sheep-out-list')?.addEventListener('change', e => {
   const outToggle = e.target.closest('#out-of-flock-show-all-toggle')
   if(!outToggle) return
   showAllOutOfFlockSheep = !!outToggle.checked
-  render()
+  state.settings.showAllOutOfFlockSheep = showAllOutOfFlockSheep
+  save(); render()
 })
 
 document.getElementById('planning-list')?.addEventListener('click', e => {
