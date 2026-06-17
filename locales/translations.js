@@ -35,7 +35,7 @@ window.FLOCKOPS_TRANSLATIONS = {
     'onboarding.empty.uploadDummy': 'Upload dummy data',
     'ui.language': 'Taal',
     'tab.paddocksZones': 'Weides en zones',
-    'tab.sheep': 'Schapen',
+    'tab.sheep': 'Kudde',
     'tab.history': 'Historiek',
     'tab.pedigree': 'Stamboom',
     'tab.billing': 'Facturatie',

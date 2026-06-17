@@ -2432,7 +2432,7 @@ function render(){
         <div class="sheep-card-body">
           <div class="sheep-name-row">
             <button type="button" class="sheep-tag-edit-button" data-id="${s.id}" aria-label="${t('aria.editSheepName', { tag: s.tag })}">✎</button>
-            <span class="sheep-name-label">${s.tag}${s.earmark ? ` <span class="sheep-name-earmark">- ${s.earmark}</span>` : ''}${genderIcon(s.gender)}</span>
+            <span class="sheep-name-label">${genderIcon(s.gender)}${s.tag}${s.earmark ? ` <span class="sheep-name-earmark">- ${s.earmark}</span>` : ''}</span>
           </div>
           ${s.birthDate
             ? `<small>${t('labels.age', { age: formatAge(s.birthDate) })}</small>`
@@ -2456,9 +2456,10 @@ function render(){
     <div class="sheep-card sheep-card--out">
       <div class="sheep-card-body">
         <div class="sheep-name-row">
-          <span class="sheep-name-label">${s.tag}${s.earmark ? ` <span class="sheep-name-earmark">- ${s.earmark}</span>` : ''}${genderIcon(s.gender)}${s.outDate ? ` <span class="sheep-out-status">${outReasonIcon(s.outReason)} ${formatBirthDate(s.outDate)}</span>` : ''}</span>
+          <span class="sheep-name-label">${genderIcon(s.gender)}${s.tag}${s.outDate ? ` <span class="sheep-out-status">${outReasonIcon(s.outReason)} ${formatBirthDate(s.outDate)}</span>` : ''}</span>
         </div>
         <small class="sheep-out-reason">${outReasonLabel(s.outReason)}</small>
+        ${s.earmark ? `<small class="sheep-out-reason">${t('sheep.edit.earmarkLabel')}: ${escapeHtml(s.earmark)}</small>` : ''}
         ${s.outNotes ? `<small class="sheep-out-notes">${escapeHtml(s.outNotes)}</small>` : ''}
       </div>
       <div class="sheep-actions">
