@@ -2535,7 +2535,7 @@ function render(){
       <div class="sheep-card-body">
         <div class="sheep-name-row">
           <span class="sheep-name-label">${genderIcon(s.gender)}${s.tag}${s.outDate ? ` <span class="sheep-out-status">${outReasonIcon(s.outReason)} ${formatBirthDate(s.outDate)}</span>` : ''}</span>
-          <button type="button" class="sheep-out-restore-badge" data-id="${s.id}" aria-label="${t('aria.restoreSheepToFlock', { tag: s.tag })}" title="${t('aria.restoreSheepToFlock', { tag: s.tag })}">${repeatIcon('inline-icon')}</button>
+          <button type="button" class="sheep-out-restore-badge" data-id="${s.id}" aria-label="${t('aria.restoreSheepToFlock', { tag: s.tag })}" title="${t('aria.restoreSheepToFlock', { tag: s.tag })}"><img src="recycle.png" class="inline-icon" alt="" aria-hidden="true"></button>
         </div>
         <small class="sheep-out-reason">${outReasonLabel(s.outReason)}</small>
         ${s.earmark ? `<small class="sheep-out-reason">${t('sheep.edit.earmarkLabel')}: ${escapeHtml(s.earmark)}</small>` : ''}
