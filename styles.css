@@ -351,13 +351,14 @@ button.add-zone-button:hover {
 }
 
 #auth-logout-menu-btn{
-  display:block;
+  display:inline-flex;
   align-self:stretch;
+  align-items:center;
+  justify-content:center;
   width:100% !important;
   min-width:0 !important;
   max-width:none;
   box-sizing:border-box;
-  text-align:center;
 }
 
 .auth-profile-divider{
