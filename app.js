@@ -4,6 +4,7 @@ const EXIT_DOWNLOAD_KEY = 'flockops:autoDownloadOnClose'
 const AUTH_TOKEN_KEY = 'flockops:authToken'
 const AUTH_USERNAME_KEY = 'flockops:authUsername'
 const API_BASE = window.FLOCKOPS_API_BASE || 'https://flockops-hfyo.onrender.com'
+const FEEDBACK_ENDPOINT = window.FLOCKOPS_FEEDBACK_ENDPOINT || 'https://formsubmit.co/ajax/bart@weverstraat9.be'
 const state = {
   paddocks: [],
   sheep: [],
@@ -320,6 +321,13 @@ function setAuthStatusMessage(message, isError = false){
   status.style.color = isError ? 'var(--error)' : 'var(--text-secondary)'
 }
 
+function setFeedbackStatusMessage(message, isError = false){
+  const status = document.getElementById('feedback-status-message')
+  if(!status) return
+  status.textContent = message || ''
+  status.style.color = isError ? 'var(--error)' : 'var(--text-secondary)'
+}
+
 function openAuthModal(){
   if(authToken) return
   setAuthStatusMessage('')
@@ -331,6 +339,21 @@ function openAuthModal(){
   if(passwordInput) passwordInput.value = ''
   if(passwordConfirmInput) passwordConfirmInput.value = ''
   openModal('auth-modal')
+}
+
+function openFeedbackModal(){
+  setFeedbackStatusMessage('')
+  closeModal('auth-modal')
+
+  const nameInput = document.getElementById('feedback-name')
+  const emailInput = document.getElementById('feedback-email')
+  const messageInput = document.getElementById('feedback-message')
+
+  if(nameInput) nameInput.value = ''
+  if(emailInput) emailInput.value = authUsername || ''
+  if(messageInput) messageInput.value = ''
+
+  openModal('feedback-modal')
 }
 
 async function fetchCloudStateAndApply(){
@@ -815,6 +838,8 @@ function applyStaticTranslations(){
   setText('download-data-btn', t('ui.save'))
   setText('upload-data-btn', t('ui.upload'))
   setText('auth-toggle-label', t('auth.toggle.loginRegister'))
+  setText('feedback-menu-btn', t('ui.feedback'))
+  setText('auth-feedback-btn', t('ui.feedback'))
   setText('auth-modal-title', t('auth.modal.title'))
   setText('auth-email-label', t('auth.email'))
   setText('auth-password-label', t('auth.password'))
@@ -823,6 +848,11 @@ function applyStaticTranslations(){
   setText('auth-mode-login-btn', t('auth.mode.login'))
   setText('auth-submit-btn', authFormMode === 'register' ? t('auth.register') : t('auth.login'))
   setText('auth-logout-menu-btn', t('auth.toggle.logout'))
+  setText('feedback-modal-title', t('feedback.modal.title'))
+  setText('feedback-name-label', t('feedback.name'))
+  setText('feedback-email-label', t('feedback.email'))
+  setText('feedback-message-label', t('feedback.message'))
+  setText('feedback-submit-btn', t('feedback.submit'))
   setText('empty-storage-modal-title', t('onboarding.empty.title'))
   setText('empty-storage-modal-description', t('onboarding.empty.description'))
   setText('empty-storage-start-zero', t('onboarding.empty.startZero'))
@@ -864,6 +894,9 @@ function applyStaticTranslations(){
   setPlaceholder('auth-email', t('auth.emailPlaceholder'))
   setPlaceholder('auth-password', t('auth.passwordPlaceholder'))
   setPlaceholder('auth-password-confirm', t('auth.passwordConfirmPlaceholder'))
+  setPlaceholder('feedback-name', t('feedback.namePlaceholder'))
+  setPlaceholder('feedback-email', t('feedback.emailPlaceholder'))
+  setPlaceholder('feedback-message', t('feedback.messagePlaceholder'))
   setIconButton('planning-item-submit', t('ui.add'))
   updateAuthUi()
   syncAuthRegisterValidation(false)
@@ -3593,8 +3626,12 @@ function closeModal(id){
 document.getElementById('auth-toggle-btn')?.addEventListener('click', async () => {
   openAuthModal()
 })
+document.getElementById('feedback-menu-btn')?.addEventListener('click', () => openFeedbackModal())
+document.getElementById('auth-feedback-btn')?.addEventListener('click', () => openFeedbackModal())
 document.getElementById('auth-modal-close')?.addEventListener('click', () => closeModal('auth-modal'))
 document.getElementById('auth-modal-backdrop')?.addEventListener('click', () => closeModal('auth-modal'))
+document.getElementById('feedback-modal-close')?.addEventListener('click', () => closeModal('feedback-modal'))
+document.getElementById('feedback-modal-backdrop')?.addEventListener('click', () => closeModal('feedback-modal'))
 document.getElementById('auth-mode-register-btn')?.addEventListener('click', () => setAuthFormMode('register'))
 document.getElementById('auth-mode-login-btn')?.addEventListener('click', () => setAuthFormMode('login'))
 document.getElementById('auth-password')?.addEventListener('input', () => {
@@ -3626,6 +3663,53 @@ document.getElementById('auth-form')?.addEventListener('submit', async (event) =
     closeModal('auth-modal')
   } catch (error) {
     setAuthStatusMessage(error.message, true)
+  }
+})
+
+document.getElementById('feedback-form')?.addEventListener('submit', async (event) => {
+  event.preventDefault()
+  const name = (document.getElementById('feedback-name')?.value || '').trim()
+  const email = (document.getElementById('feedback-email')?.value || '').trim()
+  const message = (document.getElementById('feedback-message')?.value || '').trim()
+
+  if(!message){
+    setFeedbackStatusMessage(t('feedback.status.empty'), true)
+    return
+  }
+  if(!FEEDBACK_ENDPOINT){
+    setFeedbackStatusMessage(t('feedback.status.notConfigured'), true)
+    return
+  }
+
+  try {
+    setFeedbackStatusMessage(t('feedback.status.sending'))
+    const response = await fetch(FEEDBACK_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json'
+      },
+      body: JSON.stringify({
+        _subject: 'FLOCKOPS - Feedback',
+        name,
+        email,
+        message,
+        username: authUsername || null,
+        language: currentLang,
+        page: window.location.href,
+        source: 'flockops-feedback-modal'
+      })
+    })
+    if(!response.ok){
+      throw new Error(`HTTP ${response.status}`)
+    }
+    setFeedbackStatusMessage(t('feedback.status.sent'))
+    const form = document.getElementById('feedback-form')
+    if(form) form.reset()
+    const feedbackEmailInput = document.getElementById('feedback-email')
+    if(feedbackEmailInput) feedbackEmailInput.value = authUsername || ''
+  } catch (error) {
+    setFeedbackStatusMessage(t('feedback.status.failed'), true)
   }
 })
 

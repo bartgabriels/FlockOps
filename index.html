@@ -69,6 +69,8 @@
               <span id="auth-user-label" class="auth-user-label"></span>
             </button>
             <div id="auth-profile-dropdown" class="auth-profile-dropdown" aria-hidden="true">
+              <button id="feedback-menu-btn" type="button" class="section-button">Feedback</button>
+              <div class="auth-profile-divider" role="separator" aria-hidden="true"></div>
               <button id="auth-logout-menu-btn" type="button" class="section-button auth-logout-menu-btn">Afmelden</button>
               <div class="auth-profile-divider" role="separator" aria-hidden="true"></div>
               <button id="download-data-btn" type="button" class="section-button">Opslaan</button>
@@ -396,6 +398,31 @@
         </div>
         <div id="auth-status-message" class="auth-status-message"></div>
         <button type="submit" id="auth-submit-btn" class="section-button">Aanmelden</button>
+        <button type="button" id="auth-feedback-btn" class="section-button">Feedback</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="feedback-modal" class="modal hidden" aria-hidden="true">
+    <div id="feedback-modal-backdrop" class="modal-backdrop"></div>
+    <div class="modal-panel">
+      <button type="button" id="feedback-modal-close" class="modal-close">✕</button>
+      <h2 id="feedback-modal-title">Feedback</h2>
+      <form id="feedback-form" class="group-form">
+        <div class="modal-field">
+          <label id="feedback-name-label" for="feedback-name">Naam (optioneel)</label>
+          <input id="feedback-name" type="text" autocomplete="name">
+        </div>
+        <div class="modal-field">
+          <label id="feedback-email-label" for="feedback-email">Email (optioneel)</label>
+          <input id="feedback-email" type="email" autocomplete="email">
+        </div>
+        <div class="modal-field">
+          <label id="feedback-message-label" for="feedback-message">Bericht</label>
+          <textarea id="feedback-message" rows="5" required></textarea>
+        </div>
+        <div id="feedback-status-message" class="auth-status-message"></div>
+        <button type="submit" id="feedback-submit-btn" class="section-button">Verstuur</button>
       </form>
     </div>
   </div>
