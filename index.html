@@ -61,10 +61,6 @@
         <div class="actions-menu" id="actions-menu">
           <button id="actions-menu-toggle-btn" type="button" class="section-button menu-gear-button" aria-expanded="false" aria-controls="actions-menu-panel" aria-label="Menu" title="Menu">⚙</button>
           <div id="actions-menu-panel" class="action-menu" aria-hidden="true">
-            <button id="auth-toggle-btn" type="button" class="section-button auth-toggle-button">
-              <span id="auth-toggle-dot" class="auth-indicator is-offline" aria-hidden="true"></span>
-              <span id="auth-toggle-label">Inloggen / Registreren</span>
-            </button>
             <button id="exit-download-toggle-btn" type="button" class="section-button exit-download-toggle-button" aria-pressed="false">
               <span id="exit-download-toggle-label">Auto-download bij sluiten</span>
               <span id="exit-download-toggle-state">Uit</span>
@@ -74,7 +70,13 @@
             <button id="clear-data-btn" type="button" class="section-button">Wissen</button>
           </div>
         </div>
-        <span id="auth-user-label" class="auth-user-label"></span>
+        <div id="auth-user-block" class="auth-user-block">
+          <span id="auth-user-label" class="auth-user-label"></span>
+          <button id="auth-toggle-btn" type="button" class="section-button auth-toggle-button">
+            <span id="auth-toggle-dot" class="auth-indicator is-offline" aria-hidden="true"></span>
+            <span id="auth-toggle-label">Inloggen / Registreren</span>
+          </button>
+        </div>
       </div>
       <input id="upload-data-input" type="file" accept="application/json" style="display:none">
     </div>

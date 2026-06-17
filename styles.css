@@ -277,6 +277,13 @@ button.add-zone-button:hover {
   gap:8px;
 }
 
+.auth-user-block{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  margin-left:auto;
+}
+
 .auth-indicator{
   width:10px;
   height:10px;
