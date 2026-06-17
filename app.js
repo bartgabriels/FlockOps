@@ -662,8 +662,6 @@ function applyStaticTranslations(){
   setText('auth-submit-btn', authFormMode === 'register' ? t('auth.register') : t('auth.login'))
   setText('auth-logout-menu-btn', t('auth.toggle.logout'))
   setButtonLabel('actions-menu-toggle-btn', t('ui.menu'))
-  setText('exit-download-toggle-label', t('ui.exitDownload.label'))
-  setAutoDownloadOnClose(isAutoDownloadOnCloseEnabled())
   setText('empty-storage-modal-title', t('onboarding.empty.title'))
   setText('empty-storage-modal-description', t('onboarding.empty.description'))
   setText('empty-storage-start-zero', t('onboarding.empty.startZero'))
@@ -3465,11 +3463,7 @@ document.getElementById('auth-logout-menu-btn')?.addEventListener('click', async
 })
 
 document.getElementById('download-data-btn')?.addEventListener('click', exportData)
-initAutoDownloadOnCloseToggle()
 initPlanningFilters()
-
-window.addEventListener('pagehide', handleExitDownload)
-window.addEventListener('beforeunload', handleExitDownload)
 
 document.getElementById('upload-data-btn')?.addEventListener('click', () => {
   triggerUploadDataPicker(false)

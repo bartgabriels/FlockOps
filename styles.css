@@ -332,12 +332,12 @@ button.add-zone-button:hover {
   pointer-events:none;
   transform:translateY(-4px);
   transition:opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
-  min-width:130px;
-  padding:6px;
+  min-width:260px;
+  padding:8px;
   border:1px solid var(--border);
-  border-radius:8px;
+  border-radius:10px;
   background:var(--card);
-  box-shadow:0 8px 16px rgba(2,6,23,0.15);
+  box-shadow:0 10px 20px rgba(2,6,23,0.15);
   z-index:30;
 }
 
@@ -429,26 +429,6 @@ button.add-zone-button:hover {
   min-height:1.2rem;
   font-size:0.8rem;
   color:var(--text-secondary);
-}
-
-.exit-download-toggle-button{
-  display:inline-flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:8px;
-}
-
-#exit-download-toggle-label{
-  font-size:0.85rem;
-  white-space:nowrap;
-}
-
-#exit-download-toggle-state{
-  font-size:0.85rem;
-  font-weight:700;
-  padding:2px 8px;
-  border-radius:999px;
-  background:rgba(27, 36, 33, 0.08);
 }
 
 .section-header h2{
