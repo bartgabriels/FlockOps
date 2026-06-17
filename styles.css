@@ -318,7 +318,7 @@ button.add-zone-button:hover {
 
 .auth-profile-dropdown{
   position:absolute;
-  top:calc(100% + 6px);
+  top:100%;
   right:0;
   display:flex;
   opacity:0;
@@ -335,7 +335,9 @@ button.add-zone-button:hover {
   z-index:30;
 }
 
+.auth-profile-block:hover .auth-profile-dropdown,
 .auth-user-label:hover + .auth-profile-dropdown,
+.auth-profile-dropdown:hover,
 .auth-profile-block:focus-within .auth-profile-dropdown{
   opacity:1;
   visibility:visible;
