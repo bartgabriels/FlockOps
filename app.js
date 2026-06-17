@@ -578,7 +578,11 @@ function openDeleteConfirm(kind, details = {}){
   const messageEl = document.getElementById('delete-confirm-message')
   const submitEl = document.getElementById('delete-confirm-submit')
 
-  if(titleEl) titleEl.textContent = kind === 'sheep' ? t('aria.deleteSheep') : kind === 'zone' ? t('aria.deleteZone') : t('aria.deletePaddock')
+  if(titleEl) titleEl.textContent = kind === 'sheep' || kind === 'sheep-permanent'
+    ? t('aria.deleteSheep')
+    : kind === 'zone'
+      ? t('aria.deleteZone')
+      : t('aria.deletePaddock')
   if(messageEl) messageEl.textContent = details.message || ''
   if(submitEl) submitEl.textContent = details.confirmLabel || t('actions.delete')
 
@@ -639,6 +643,31 @@ function moveSheepOutOfFlock(reason, date, notes = ''){
   save(); render(); closeSheepOutOfFlockModal()
 }
 
+function permanentlyDeleteSheep(sheepId){
+  const sheepIndex = state.sheep.findIndex(s => s.id === sheepId)
+  if(sheepIndex < 0) return
+
+  const sheep = state.sheep[sheepIndex]
+  const sourcePaddockId = sheep.outFromPaddockId ?? sheep.paddockId ?? null
+  const sourceZoneId = sheep.outFromZoneId ?? sheep.zoneId ?? null
+  const deletedTag = sheep.tag
+
+  state.sheep.splice(sheepIndex, 1)
+  state.sheep.forEach(entry => {
+    if(entry.motherId === sheepId) entry.motherId = null
+    if(entry.fatherId === sheepId) entry.fatherId = null
+  })
+
+  addEvent('SHEEP_DELETED', {
+    sheepId,
+    tag: deletedTag,
+    paddockId: sourcePaddockId,
+    zoneId: sourceZoneId
+  })
+
+  save(); render()
+}
+
 function closeDeleteConfirmModal(){
   pendingDeleteConfirm = null
   closeModal('delete-confirm-modal')
@@ -653,6 +682,13 @@ function executeDeleteConfirmed(){
     const sheepId = details.sheepId
     if(!sheepId) return
     openSheepOutOfFlockModal(sheepId)
+    return
+  }
+
+  if(kind === 'sheep-permanent'){
+    const sheepId = details.sheepId
+    if(!sheepId) return
+    permanentlyDeleteSheep(sheepId)
     return
   }
 
@@ -2421,8 +2457,9 @@ function render(){
         <small class="sheep-out-reason">${outReasonLabel(s.outReason)}</small>
         ${s.outNotes ? `<small class="sheep-out-notes">${escapeHtml(s.outNotes)}</small>` : ''}
       </div>
-      <div class="sheep-actions sheep-actions--single">
+      <div class="sheep-actions">
         <button type="button" class="sheep-out-visibility-button" data-id="${s.id}" aria-label="${t('aria.toggleOutVisibility', { tag: s.tag })}">${s.outHidden ? t('sheep.out.show') : t('sheep.out.hide')}</button>
+        <button type="button" class="sheep-out-delete-button" data-id="${s.id}" aria-label="${t('aria.deleteSheepPermanent', { tag: s.tag })}" title="${t('aria.deleteSheepPermanent', { tag: s.tag })}">${t('actions.delete')}</button>
       </div>
     </div>
   `).join('')
