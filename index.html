@@ -70,11 +70,19 @@
             <button id="clear-data-btn" type="button" class="section-button">Wissen</button>
           </div>
         </div>
-        <button id="auth-toggle-btn" type="button" class="section-button auth-toggle-button auth-user-block">
-          <span id="auth-toggle-dot" class="auth-indicator is-offline" aria-hidden="true"></span>
-          <span id="auth-user-label" class="auth-user-label"></span>
-          <span id="auth-toggle-label">Inloggen / Registreren</span>
-        </button>
+        <div id="auth-user-block" class="auth-user-block">
+          <button id="auth-toggle-btn" type="button" class="section-button auth-toggle-button">
+            <span id="auth-toggle-dot" class="auth-indicator is-offline" aria-hidden="true"></span>
+            <span id="auth-toggle-label">Inloggen / Registreren</span>
+          </button>
+          <div id="auth-profile-block" class="auth-profile-block" tabindex="0">
+            <span class="auth-indicator is-online" aria-hidden="true"></span>
+            <span id="auth-user-label" class="auth-user-label"></span>
+            <div id="auth-profile-dropdown" class="auth-profile-dropdown" aria-hidden="true">
+              <button id="auth-logout-menu-btn" type="button" class="section-button auth-logout-menu-btn">Afmelden</button>
+            </div>
+          </div>
+        </div>
       </div>
       <input id="upload-data-input" type="file" accept="application/json" style="display:none">
     </div>

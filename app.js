@@ -166,15 +166,19 @@ function updateAuthUi(){
   const indicator = document.getElementById('auth-toggle-dot')
   const label = document.getElementById('auth-toggle-label')
   const userLabel = document.getElementById('auth-user-label')
+  const userBlock = document.getElementById('auth-user-block')
   if(indicator){
     indicator.classList.toggle('is-online', !!authToken)
     indicator.classList.toggle('is-offline', !authToken)
   }
   if(label){
-    label.textContent = authToken ? t('auth.toggle.logout') : t('auth.toggle.loginRegister')
+    label.textContent = t('auth.toggle.loginRegister')
   }
   if(userLabel){
     userLabel.textContent = authToken && authUsername ? authUsername : ''
+  }
+  if(userBlock){
+    userBlock.classList.toggle('is-online', !!authToken)
   }
 }
 
@@ -634,6 +638,7 @@ function applyStaticTranslations(){
   setText('auth-mode-register-btn', t('auth.mode.register'))
   setText('auth-mode-login-btn', t('auth.mode.login'))
   setText('auth-submit-btn', authFormMode === 'register' ? t('auth.register') : t('auth.login'))
+  setText('auth-logout-menu-btn', t('auth.toggle.logout'))
   setButtonLabel('actions-menu-toggle-btn', t('ui.menu'))
   setText('exit-download-toggle-label', t('ui.exitDownload.label'))
   setAutoDownloadOnClose(isAutoDownloadOnCloseEnabled())
@@ -3354,15 +3359,6 @@ function closeModal(id){
 }
 
 document.getElementById('auth-toggle-btn')?.addEventListener('click', async () => {
-  if(authToken){
-    try {
-      await apiFetch('/auth/logout', { method: 'POST' })
-    } catch (error) {
-      console.warn('Cloud logout failed:', error.message)
-    }
-    clearAuthSession()
-    return
-  }
   openAuthModal()
 })
 document.getElementById('auth-modal-close')?.addEventListener('click', () => closeModal('auth-modal'))
@@ -3388,6 +3384,17 @@ document.getElementById('auth-form')?.addEventListener('submit', async (event) =
   } catch (error) {
     setAuthStatusMessage(error.message, true)
   }
+})
+
+document.getElementById('auth-logout-menu-btn')?.addEventListener('click', async () => {
+  try {
+    if(authToken){
+      await apiFetch('/auth/logout', { method: 'POST' })
+    }
+  } catch (error) {
+    console.warn('Cloud logout failed:', error.message)
+  }
+  clearAuthSession()
 })
 
 document.getElementById('download-data-btn')?.addEventListener('click', exportData)

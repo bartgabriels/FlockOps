@@ -283,8 +283,14 @@ button.add-zone-button:hover {
   align-items:center;
   gap:8px;
   margin-left:auto;
-  min-height:34px;
-  border-radius:999px;
+}
+
+.auth-user-block.is-online #auth-toggle-btn{
+  display:none;
+}
+
+.auth-user-block.is-online .auth-profile-block{
+  display:inline-flex;
 }
 
 .auth-indicator{
@@ -303,6 +309,36 @@ button.add-zone-button:hover {
   background:#1E9F44;
 }
 
+.auth-profile-block{
+  display:none;
+  position:relative;
+  align-items:center;
+  gap:8px;
+}
+
+.auth-profile-dropdown{
+  position:absolute;
+  top:calc(100% + 6px);
+  right:0;
+  display:none;
+  min-width:130px;
+  padding:6px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:var(--card);
+  box-shadow:0 8px 16px rgba(2,6,23,0.15);
+  z-index:30;
+}
+
+.auth-profile-block:hover .auth-profile-dropdown,
+.auth-profile-block:focus-within .auth-profile-dropdown{
+  display:flex;
+}
+
+.auth-logout-menu-btn{
+  width:100%;
+}
+
 .auth-user-label{
   display:inline-flex;
   align-items:center;
@@ -315,6 +351,7 @@ button.add-zone-button:hover {
   font-size:0.75rem;
   font-weight:600;
   white-space:nowrap;
+  cursor:default;
 }
 
 .auth-user-label:empty{
