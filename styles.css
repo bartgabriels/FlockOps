@@ -1215,6 +1215,19 @@ form button{
   background:#E3ECF2;
 }
 
+.sheep-out-delete-button{
+  background:#FCE8E8;
+  color:#8A2A2A;
+  border:1px solid #E8B5B5;
+  border-radius:999px;
+  min-height:28px;
+  cursor:pointer;
+}
+
+.sheep-out-delete-button:hover{
+  background:#F7DADA;
+}
+
 .sheep-hidden-badge{
   font-size:0.68rem;
   padding:2px 7px;

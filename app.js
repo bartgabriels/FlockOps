@@ -4350,6 +4350,18 @@ document.getElementById('sheep-modal-birth-date')?.addEventListener('keydown', e
 })
 
 document.getElementById('sheep-out-list')?.addEventListener('click', e => {
+  const deleteButton = e.target.closest('.sheep-out-delete-button')
+  if(deleteButton){
+    const sheepId = deleteButton.dataset.id
+    if(!sheepId) return
+    openDeleteConfirm('sheep-permanent', {
+      sheepId,
+      message: t('confirm.deleteSheepPermanent'),
+      confirmLabel: t('actions.delete')
+    })
+    return
+  }
+
   const visibilityButton = e.target.closest('.sheep-out-visibility-button')
   if(!visibilityButton) return
   const sheepId = visibilityButton.dataset.id
