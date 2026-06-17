@@ -305,6 +305,35 @@ function queueCloudSave(persistedState){
   }, 700)
 }
 
+async function flushCloudSaveNow(){
+  if(!authToken) return
+  if(cloudSaveTimer){
+    clearTimeout(cloudSaveTimer)
+    cloudSaveTimer = null
+  }
+  const stateToSave = pendingCloudState || cloudStatePayload()
+  pendingCloudState = null
+  await apiFetch('/state', {
+    method: 'PUT',
+    body: JSON.stringify({ data: stateToSave })
+  })
+}
+
+function clearLocalAppStorage(){
+  try {
+    const keys = []
+    for(let index = 0; index < localStorage.length; index += 1){
+      const key = localStorage.key(index)
+      if(key && key.startsWith('flockops:')){
+        keys.push(key)
+      }
+    }
+    keys.forEach(key => localStorage.removeItem(key))
+  } catch (error) {
+    console.warn('Could not clear browser local storage for app keys')
+  }
+}
+
 async function initializeCloudSession(){
   loadStoredAuth()
   updateAuthUi()
@@ -1256,6 +1285,23 @@ function load(){
   hydrateState(null)
 }
 
+function resetStateToDefaultConfig(){
+  state.paddocks = []
+  state.sheep = []
+  state.history = []
+  state.events = []
+  state.planningItems = []
+  collapsedPaddockIds.clear()
+  expandedWeatherPaddocks.clear()
+  weatherLoading.clear()
+  Object.keys(weatherCache).forEach(key => {
+    delete weatherCache[key]
+  })
+  ensureDefaultStal()
+  collapseAllPaddocks()
+  updateZoneEmptyStates()
+}
+
 function save(){
   updateZoneEmptyStates()
   syncDerivedPlanningItems()
@@ -1797,6 +1843,10 @@ function triggerUploadDataPicker(reopenModalOnCancel = false){
 
 function maybeOpenEmptyStorageModal(){
   if(isOnboardingEmptyState()){
+    if(!authToken){
+      openAuthModal()
+      return
+    }
     openModal('empty-storage-modal')
   }
 }
@@ -3446,12 +3496,18 @@ document.getElementById('auth-form')?.addEventListener('submit', async (event) =
 
 document.getElementById('auth-logout-menu-btn')?.addEventListener('click', async () => {
   try {
+    await flushCloudSaveNow()
+  } catch (error) {
+    console.warn('Final cloud sync before logout failed:', error.message)
+  }
+  try {
     if(authToken){
       await apiFetch('/auth/logout', { method: 'POST' })
     }
   } catch (error) {
     console.warn('Cloud logout failed:', error.message)
   }
+  clearLocalAppStorage()
   clearAuthSession()
   const profileToggleButton = document.getElementById('auth-profile-toggle-btn')
   const dropdown = document.getElementById('auth-profile-dropdown')
@@ -3460,6 +3516,9 @@ document.getElementById('auth-logout-menu-btn')?.addEventListener('click', async
     dropdown.classList.remove('is-open')
     dropdown.setAttribute('aria-hidden', 'true')
   }
+  resetStateToDefaultConfig()
+  render()
+  maybeOpenEmptyStorageModal()
 })
 
 document.getElementById('download-data-btn')?.addEventListener('click', exportData)
