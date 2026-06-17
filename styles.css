@@ -1223,6 +1223,35 @@ form button{
   background:#E3ECF2;
 }
 
+.sheep-out-restore-badge{
+  background:var(--chip-bg);
+  color:var(--chip-text);
+  border:1px solid var(--border);
+  border-radius:999px;
+  width:24px;
+  min-width:24px;
+  height:24px;
+  min-height:24px;
+  padding:0;
+  line-height:1;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  margin-left:auto;
+  flex:0 0 auto;
+}
+
+.sheep-out-restore-badge:hover{
+  background:#DCE9E3;
+}
+
+.sheep-out-restore-badge .inline-icon{
+  width:0.95em;
+  height:0.95em;
+  vertical-align:0;
+}
+
 .sheep-out-delete-button{
   background:#FCE8E8;
   color:#8A2A2A;

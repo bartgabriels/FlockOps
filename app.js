@@ -656,6 +656,50 @@ function moveSheepOutOfFlock(reason, date, notes = ''){
   save(); render(); closeSheepOutOfFlockModal()
 }
 
+function restoreSheepToFlock(sheepId){
+  const sheep = state.sheep.find(s => s.id === sheepId)
+  if(!sheep || !isOutOfFlockSheep(sheep)) return
+
+  if(state.paddocks.length === 0){
+    ensureDefaultStal()
+  }
+
+  let targetPaddockId = sheep.outFromPaddockId && getPaddock(sheep.outFromPaddockId)
+    ? sheep.outFromPaddockId
+    : (state.paddocks[0]?.id || null)
+
+  let targetZoneId = null
+  const targetPaddock = targetPaddockId ? getPaddock(targetPaddockId) : null
+  if(targetPaddock){
+    if(sheep.outFromZoneId && targetPaddock.zones.some(zone => zone.id === sheep.outFromZoneId)){
+      targetZoneId = sheep.outFromZoneId
+    } else if(isStalPaddock(targetPaddock)){
+      const stalZone = targetPaddock.zones.find(zone => isStalZone(targetPaddock, zone))
+      targetZoneId = stalZone ? stalZone.id : (targetPaddock.zones[0]?.id || null)
+    }
+  }
+
+  sheep.flockStatus = 'active'
+  sheep.outReason = null
+  sheep.outDate = null
+  sheep.outNotes = null
+  sheep.outHidden = false
+  sheep.paddockId = targetPaddockId
+  sheep.zoneId = targetZoneId
+  sheep.outFromPaddockId = null
+  sheep.outFromZoneId = null
+  sheep.lastUpdated = Date.now()
+
+  addEvent('SHEEP_RESTORED_TO_FLOCK', {
+    sheepId: sheep.id,
+    tag: sheep.tag,
+    paddockId: targetPaddockId,
+    zoneId: targetZoneId
+  })
+
+  save(); render()
+}
+
 function permanentlyDeleteSheep(sheepId){
   const sheepIndex = state.sheep.findIndex(s => s.id === sheepId)
   if(sheepIndex < 0) return
@@ -1587,6 +1631,16 @@ function generateHistoryFromEvents(){
         })
         sheepNames = [payload.tag || '?']
         break
+      case 'SHEEP_RESTORED_TO_FLOCK':
+        what = t('entity.sheep')
+        detail = t('history.sheep.restoredToFlock', {
+          tag: payload.tag || '?',
+          location: payload.zoneId
+            ? `${paddockName(payload.paddockId)} / ${zoneName(payload.paddockId, payload.zoneId)}`
+            : paddockName(payload.paddockId)
+        })
+        sheepNames = [payload.tag || '?']
+        break
       case 'PADDOCK_CREATED':
         what = 'weide'
         detail = t('history.paddock.added', { name: payload.name || '?' })
@@ -2481,6 +2535,7 @@ function render(){
       <div class="sheep-card-body">
         <div class="sheep-name-row">
           <span class="sheep-name-label">${genderIcon(s.gender)}${s.tag}${s.outDate ? ` <span class="sheep-out-status">${outReasonIcon(s.outReason)} ${formatBirthDate(s.outDate)}</span>` : ''}</span>
+          <button type="button" class="sheep-out-restore-badge" data-id="${s.id}" aria-label="${t('aria.restoreSheepToFlock', { tag: s.tag })}" title="${t('aria.restoreSheepToFlock', { tag: s.tag })}">${repeatIcon('inline-icon')}</button>
         </div>
         <small class="sheep-out-reason">${outReasonLabel(s.outReason)}</small>
         ${s.earmark ? `<small class="sheep-out-reason">${t('sheep.edit.earmarkLabel')}: ${escapeHtml(s.earmark)}</small>` : ''}
@@ -4379,6 +4434,14 @@ document.getElementById('sheep-modal-birth-date')?.addEventListener('keydown', e
 })
 
 document.getElementById('sheep-out-list')?.addEventListener('click', e => {
+  const restoreButton = e.target.closest('.sheep-out-restore-badge')
+  if(restoreButton){
+    const sheepId = restoreButton.dataset.id
+    if(!sheepId) return
+    restoreSheepToFlock(sheepId)
+    return
+  }
+
   const deleteButton = e.target.closest('.sheep-out-delete-button')
   if(deleteButton){
     const sheepId = deleteButton.dataset.id
