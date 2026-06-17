@@ -27,6 +27,7 @@ let hasTriggeredExitDownload = false
 let reopenEmptyStorageModalAfterUpload = false
 let hasInitializedPlanningFilters = false
 let showAllOutOfFlockSheep = false
+const MIN_SHEEP_BIRTH_DATE = '2000-01-01'
 
 const SEO_BY_LANG = {
   nl: {
@@ -2896,7 +2897,7 @@ function render(){
           </div>
           ${s.birthDate
             ? `<small>${t('labels.age', { age: formatAge(s.birthDate) })}</small>`
-            : `<input type="date" class="sheep-birthdate-input" data-id="${s.id}" max="${todayIso()}" aria-label="${t('aria.setSheepBirthDate', { tag: s.tag })}" title="${t('aria.setSheepBirthDate', { tag: s.tag })}">`}
+            : `<input type="date" class="sheep-birthdate-input" data-id="${s.id}" min="${MIN_SHEEP_BIRTH_DATE}" max="${todayIso()}" aria-label="${t('aria.setSheepBirthDate', { tag: s.tag })}" title="${t('aria.setSheepBirthDate', { tag: s.tag })}">`}
           <small>${paddockName(s.paddockId)}${s.zoneId ? ' / ' + zoneName(s.paddockId, s.zoneId) : ''}</small>
           <small>${scissorsIcon('inline-icon')} ${calendarIcon('inline-icon')} ${lastShearingValue}</small>
           <small>${syringeIcon('inline-icon')} ${calendarIcon('inline-icon')} ${lastInjectionValue}</small>
@@ -3214,6 +3215,7 @@ function setSheepModalDefaultSelection(){
   if(!sheepPaddockModal || !sheepZoneModal) return
 
   if(birthDateInput){
+    birthDateInput.setAttribute('min', MIN_SHEEP_BIRTH_DATE)
     birthDateInput.setAttribute('max', todayIso())
   }
 
@@ -3814,6 +3816,7 @@ function openPaddockInjectionModal(paddockId, zoneId = null){
   if(repeatDateInput) repeatDateInput.value = oneYearFromTodayIso()
   if(noRepeatInput) noRepeatInput.checked = false
   if(repeatDateInput){
+    repeatDateInput.min = todayIso()
     repeatDateInput.disabled = false
     repeatDateInput.required = true
   }
@@ -3876,6 +3879,7 @@ function openSheepInjectionModal(sheepId){
   if(repeatDateInput) repeatDateInput.value = oneYearFromTodayIso()
   if(noRepeatInput) noRepeatInput.checked = false
   if(repeatDateInput){
+    repeatDateInput.min = todayIso()
     repeatDateInput.disabled = false
     repeatDateInput.required = true
   }
@@ -4175,6 +4179,7 @@ document.getElementById('paddock-injection-form')?.addEventListener('submit', e 
   const noRepeat = noRepeatInput ? noRepeatInput.checked : false
   const repeatDate = repeatDateInput ? repeatDateInput.value.trim() : ''
   if(!date || !product || (!noRepeat && !repeatDate)) return
+  if(!noRepeat && repeatDate < todayIso()) return
 
   const selectedSheepIds = Array.from(document.querySelectorAll('#paddock-injection-sheep-list input[name="paddock-injection-sheep"]:checked')).map(input => input.value)
   const sheepInPaddock = state.sheep.filter(s => isActiveFlockSheep(s) && s.paddockId === pendingInjectionPaddockId && selectedSheepIds.includes(s.id))
@@ -4256,6 +4261,7 @@ document.getElementById('sheep-injection-form')?.addEventListener('submit', e =>
   const noRepeat = noRepeatInput ? noRepeatInput.checked : false
   const repeatDate = repeatDateInput ? repeatDateInput.value.trim() : ''
   if(!date || !product || (!noRepeat && !repeatDate)) return
+  if(!noRepeat && repeatDate < todayIso()) return
 
   if(!Array.isArray(sheep.injections)) sheep.injections = []
   sheep.injections.push({
@@ -4375,6 +4381,7 @@ document.getElementById('sheep-modal-form')?.addEventListener('submit', e => {
   if(!tag || !paddockId || !gender) return
   if(birthDate){
     if(!/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) return
+    if(birthDate < MIN_SHEEP_BIRTH_DATE) return
     if(birthDate > todayIso()) return
   }
   if(isEarmarkInUse(earmark)){
@@ -4718,6 +4725,7 @@ document.getElementById('sheep-list')?.addEventListener('change', e => {
   if(!sheepId) return
   const nextBirthDate = birthDateInput.value.trim()
   if(!/^\d{4}-\d{2}-\d{2}$/.test(nextBirthDate)) return
+  if(nextBirthDate < MIN_SHEEP_BIRTH_DATE) return
   if(nextBirthDate > todayIso()) return
   const sheep = state.sheep.find(s => s.id === sheepId)
   if(!sheep) return
@@ -4729,6 +4737,22 @@ document.getElementById('sheep-list')?.addEventListener('change', e => {
 document.getElementById('sheep-list')?.addEventListener('keydown', e => {
   const birthDateInput = e.target.closest('.sheep-birthdate-input')
   if(!birthDateInput) return
+  const allowedKeys = ['Tab', 'Shift', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']
+  if(allowedKeys.includes(e.key)) return
+  e.preventDefault()
+})
+
+document.getElementById('sheep-modal-birth-date')?.addEventListener('click', e => {
+  if(typeof e.target.showPicker === 'function'){
+    try {
+      e.target.showPicker()
+    } catch (error) {
+      // Ignore browsers that block programmatic picker opening.
+    }
+  }
+})
+
+document.getElementById('sheep-modal-birth-date')?.addEventListener('keydown', e => {
   const allowedKeys = ['Tab', 'Shift', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']
   if(allowedKeys.includes(e.key)) return
   e.preventDefault()
