@@ -61,6 +61,7 @@
         <div class="actions-menu" id="actions-menu">
           <button id="actions-menu-toggle-btn" type="button" class="section-button menu-gear-button" aria-expanded="false" aria-controls="actions-menu-panel" aria-label="Menu" title="Menu">⚙</button>
           <div id="actions-menu-panel" class="action-menu" aria-hidden="true">
+            <button id="auth-open-btn" type="button" class="section-button">Cloud account</button>
             <button id="exit-download-toggle-btn" type="button" class="section-button exit-download-toggle-button" aria-pressed="false">
               <span id="exit-download-toggle-label">Auto-download bij sluiten</span>
               <span id="exit-download-toggle-state">Uit</span>
@@ -70,6 +71,7 @@
             <button id="clear-data-btn" type="button" class="section-button">Wissen</button>
           </div>
         </div>
+        <span id="auth-status-chip" class="auth-status-chip">Offline</span>
       </div>
       <input id="upload-data-input" type="file" accept="application/json" style="display:none">
     </div>
@@ -363,6 +365,30 @@
         <button type="button" id="empty-storage-upload-config" class="section-button">Upload a config file</button>
         <button type="button" id="empty-storage-upload-dummy" class="section-button">Upload dummy data</button>
       </div>
+    </div>
+  </div>
+
+  <div id="auth-modal" class="modal hidden" aria-hidden="true">
+    <div id="auth-modal-backdrop" class="modal-backdrop"></div>
+    <div class="modal-panel">
+      <button type="button" id="auth-modal-close" class="modal-close">✕</button>
+      <h2 id="auth-modal-title">Cloud account</h2>
+      <form id="auth-form" class="group-form">
+        <div class="modal-field">
+          <label id="auth-username-label" for="auth-username">Username</label>
+          <input id="auth-username" autocomplete="username" required>
+        </div>
+        <div class="modal-field">
+          <label id="auth-password-label" for="auth-password">Password</label>
+          <input id="auth-password" type="password" autocomplete="current-password" required>
+        </div>
+        <div id="auth-status-message" class="auth-status-message"></div>
+        <div class="auth-action-row">
+          <button type="button" id="auth-register-btn" class="section-button">Register</button>
+          <button type="submit" id="auth-login-btn" class="section-button">Login</button>
+          <button type="button" id="auth-logout-btn" class="section-button">Logout</button>
+        </div>
+      </form>
     </div>
   </div>
 

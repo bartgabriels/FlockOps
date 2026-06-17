@@ -1,6 +1,9 @@
 const KEY = 'flockops:data'
 const LANG_KEY = 'flockops:lang'
 const EXIT_DOWNLOAD_KEY = 'flockops:autoDownloadOnClose'
+const AUTH_TOKEN_KEY = 'flockops:authToken'
+const AUTH_USERNAME_KEY = 'flockops:authUsername'
+const API_BASE = window.FLOCKOPS_API_BASE || 'https://flockops-hfyo.onrender.com'
 const state = { paddocks: [], sheep: [], history: [], events: [], planningItems: [] }
 const collapsedPaddockIds = new Set()
 const expandedWeatherPaddocks = new Set()
@@ -28,6 +31,10 @@ let reopenEmptyStorageModalAfterUpload = false
 let hasInitializedPlanningFilters = false
 let showAllOutOfFlockSheep = false
 const MIN_SHEEP_BIRTH_DATE = '2000-01-01'
+let authToken = null
+let authUsername = null
+let cloudSaveTimer = null
+let pendingCloudState = null
 
 const SEO_BY_LANG = {
   nl: {
@@ -113,6 +120,157 @@ function t(key, params = {}){
     const value = params[name]
     return value === undefined || value === null ? '' : String(value)
   })
+}
+
+function loadStoredAuth(){
+  try {
+    authToken = localStorage.getItem(AUTH_TOKEN_KEY)
+    authUsername = localStorage.getItem(AUTH_USERNAME_KEY)
+  } catch (error) {
+    authToken = null
+    authUsername = null
+  }
+}
+
+function persistAuthSession(token, username){
+  authToken = token
+  authUsername = username
+  try {
+    localStorage.setItem(AUTH_TOKEN_KEY, token)
+    localStorage.setItem(AUTH_USERNAME_KEY, username)
+  } catch (error) {
+    console.warn('Could not persist auth session to localStorage')
+  }
+  updateAuthUi()
+}
+
+function clearAuthSession(){
+  authToken = null
+  authUsername = null
+  pendingCloudState = null
+  if(cloudSaveTimer){
+    clearTimeout(cloudSaveTimer)
+    cloudSaveTimer = null
+  }
+  try {
+    localStorage.removeItem(AUTH_TOKEN_KEY)
+    localStorage.removeItem(AUTH_USERNAME_KEY)
+  } catch (error) {
+    console.warn('Could not clear auth session from localStorage')
+  }
+  updateAuthUi()
+}
+
+function updateAuthUi(){
+  const chip = document.getElementById('auth-status-chip')
+  const logoutButton = document.getElementById('auth-logout-btn')
+  if(chip){
+    if(authToken && authUsername){
+      chip.textContent = `${authUsername}`
+      chip.classList.add('is-online')
+    } else {
+      chip.textContent = t('auth.status.offline')
+      chip.classList.remove('is-online')
+    }
+  }
+  if(logoutButton){
+    logoutButton.disabled = !authToken
+  }
+}
+
+function cloudStatePayload(){
+  const sheepForStorage = state.sheep.map(sheep => ({
+    ...sheep,
+    injections: [],
+    shearings: []
+  }))
+  return {
+    ...state,
+    history: [],
+    sheep: sheepForStorage,
+    planningItems: state.planningItems.filter(item => item && item.source === 'manual')
+  }
+}
+
+async function apiFetch(path, options = {}){
+  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) }
+  if(authToken){
+    headers.Authorization = `Bearer ${authToken}`
+  }
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers
+  })
+  let payload = null
+  try {
+    payload = await response.json()
+  } catch (error) {
+    payload = null
+  }
+  if(!response.ok){
+    const message = payload?.message || `HTTP ${response.status}`
+    throw new Error(message)
+  }
+  return payload
+}
+
+function setAuthStatusMessage(message, isError = false){
+  const status = document.getElementById('auth-status-message')
+  if(!status) return
+  status.textContent = message || ''
+  status.style.color = isError ? 'var(--error)' : 'var(--text-secondary)'
+}
+
+function openAuthModal(){
+  setAuthStatusMessage('')
+  const usernameInput = document.getElementById('auth-username')
+  const passwordInput = document.getElementById('auth-password')
+  if(usernameInput) usernameInput.value = authUsername || ''
+  if(passwordInput) passwordInput.value = ''
+  openModal('auth-modal')
+}
+
+async function fetchCloudStateAndApply(){
+  if(!authToken) return
+  const result = await apiFetch('/state')
+  if(result && result.data && typeof result.data === 'object'){
+    hydrateState(result.data)
+    save()
+    render()
+  }
+}
+
+function queueCloudSave(persistedState){
+  if(!authToken) return
+  pendingCloudState = persistedState
+  if(cloudSaveTimer){
+    clearTimeout(cloudSaveTimer)
+  }
+  cloudSaveTimer = setTimeout(async () => {
+    const stateToSave = pendingCloudState
+    pendingCloudState = null
+    cloudSaveTimer = null
+    try {
+      await apiFetch('/state', {
+        method: 'PUT',
+        body: JSON.stringify({ data: stateToSave })
+      })
+    } catch (error) {
+      console.warn('Cloud save failed:', error.message)
+    }
+  }, 700)
+}
+
+async function initializeCloudSession(){
+  loadStoredAuth()
+  updateAuthUi()
+  if(!authToken) return
+  try {
+    await apiFetch('/auth/me')
+    await fetchCloudStateAndApply()
+  } catch (error) {
+    clearAuthSession()
+  }
 }
 
 function isPayPalBillingReady(){
@@ -451,6 +609,13 @@ function applyStaticTranslations(){
   setText('download-data-btn', t('ui.save'))
   setText('upload-data-btn', t('ui.upload'))
   setText('clear-data-btn', t('ui.clear'))
+  setText('auth-open-btn', t('auth.open'))
+  setText('auth-modal-title', t('auth.modal.title'))
+  setText('auth-username-label', t('auth.username'))
+  setText('auth-password-label', t('auth.password'))
+  setText('auth-register-btn', t('auth.register'))
+  setText('auth-login-btn', t('auth.login'))
+  setText('auth-logout-btn', t('auth.logout'))
   setButtonLabel('actions-menu-toggle-btn', t('ui.menu'))
   setText('exit-download-toggle-label', t('ui.exitDownload.label'))
   setAutoDownloadOnClose(isAutoDownloadOnCloseEnabled())
@@ -492,6 +657,8 @@ function applyStaticTranslations(){
   setText('planning-item-repeat-date-label', t('planning.add.repeatDate'))
   setText('planning-item-detail-label', t('planning.add.detail'))
   setPlaceholder('planning-item-detail', t('planning.add.detailPlaceholder'))
+  setPlaceholder('auth-username', t('auth.usernamePlaceholder'))
+  setPlaceholder('auth-password', t('auth.passwordPlaceholder'))
   setIconButton('planning-item-submit', t('ui.add'))
 
   setText('sheep-modal-title', t('sheep.add.title'))
@@ -1010,18 +1177,9 @@ function load(){
 function save(){
   updateZoneEmptyStates()
   syncDerivedPlanningItems()
-  const sheepForStorage = state.sheep.map(sheep => ({
-    ...sheep,
-    injections: [],
-    shearings: []
-  }))
-  const persistedState = {
-    ...state,
-    history: [],
-    sheep: sheepForStorage,
-    planningItems: state.planningItems.filter(item => item && item.source === 'manual')
-  }
+  const persistedState = cloudStatePayload()
   localStorage.setItem(KEY, JSON.stringify(persistedState))
+  queueCloudSave(persistedState)
 }
 
 function formatBirthDate(dateString){
@@ -3176,6 +3334,59 @@ function closeModal(id){
   modal.setAttribute('aria-hidden', 'true')
 }
 
+document.getElementById('auth-open-btn')?.addEventListener('click', openAuthModal)
+document.getElementById('auth-modal-close')?.addEventListener('click', () => closeModal('auth-modal'))
+document.getElementById('auth-modal-backdrop')?.addEventListener('click', () => closeModal('auth-modal'))
+
+document.getElementById('auth-register-btn')?.addEventListener('click', async () => {
+  const username = (document.getElementById('auth-username')?.value || '').trim().toLowerCase()
+  const password = (document.getElementById('auth-password')?.value || '').trim()
+  try {
+    setAuthStatusMessage(t('auth.status.registering'))
+    const result = await apiFetch('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ username, password })
+    })
+    persistAuthSession(result.token, result.username)
+    setAuthStatusMessage(t('auth.status.registered'))
+    await fetchCloudStateAndApply()
+    closeModal('auth-modal')
+  } catch (error) {
+    setAuthStatusMessage(error.message, true)
+  }
+})
+
+document.getElementById('auth-form')?.addEventListener('submit', async (event) => {
+  event.preventDefault()
+  const username = (document.getElementById('auth-username')?.value || '').trim().toLowerCase()
+  const password = (document.getElementById('auth-password')?.value || '').trim()
+  try {
+    setAuthStatusMessage(t('auth.status.loggingIn'))
+    const result = await apiFetch('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password })
+    })
+    persistAuthSession(result.token, result.username)
+    setAuthStatusMessage(t('auth.status.loggedIn'))
+    await fetchCloudStateAndApply()
+    closeModal('auth-modal')
+  } catch (error) {
+    setAuthStatusMessage(error.message, true)
+  }
+})
+
+document.getElementById('auth-logout-btn')?.addEventListener('click', async () => {
+  try {
+    if(authToken){
+      await apiFetch('/auth/logout', { method: 'POST' })
+    }
+  } catch (error) {
+    console.warn('Cloud logout failed:', error.message)
+  }
+  clearAuthSession()
+  closeModal('auth-modal')
+})
+
 document.getElementById('download-data-btn')?.addEventListener('click', exportData)
 initAutoDownloadOnCloseToggle()
 initPlanningFilters()
@@ -4288,6 +4499,7 @@ if(document.readyState === 'loading'){
     applyStaticTranslations()
     load()
     render()
+    initializeCloudSession()
     maybeOpenEmptyStorageModal()
   })
 } else {
@@ -4298,6 +4510,7 @@ if(document.readyState === 'loading'){
   applyStaticTranslations()
   load()
   render()
+  initializeCloudSession()
   maybeOpenEmptyStorageModal()
 }
 

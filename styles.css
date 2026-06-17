@@ -271,6 +271,27 @@ button.add-zone-button:hover {
   align-items:center;
 }
 
+.auth-status-chip{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:34px;
+  padding:4px 10px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  background:var(--surface-soft);
+  color:var(--text-secondary);
+  font-size:0.75rem;
+  font-weight:600;
+  white-space:nowrap;
+}
+
+.auth-status-chip.is-online{
+  background:#E6F6EA;
+  color:#165C2D;
+  border-color:#B9DFC4;
+}
+
 .actions-menu{
   position:relative;
 }
@@ -311,6 +332,18 @@ button.add-zone-button:hover {
 
 .action-menu .section-button{
   width:100%;
+}
+
+.auth-action-row{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+}
+
+.auth-status-message{
+  min-height:1.2rem;
+  font-size:0.8rem;
+  color:var(--text-secondary);
 }
 
 .exit-download-toggle-button{
