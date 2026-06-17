@@ -1957,6 +1957,14 @@ form button{
   background:var(--surface-muted);
 }
 
+.zone-bulk-move-sheep-grid{
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+}
+
+.zone-delete-sheep-grid{
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+}
+
 .modal-sheep-option{
   display:flex;
   align-items:center;

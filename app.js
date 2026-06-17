@@ -1002,9 +1002,12 @@ function applyStaticTranslations(){
   // Move modals
   setText('move-modal-title', t('move.title'))
   setText('zone-bulk-move-modal-title', t('move.bulkTitle'))
+  setText('zone-delete-sheep-list-label', t('move.bulkSheepLabel'))
   setText('zone-delete-move-modal-title', t('move.deleteZoneTitle'))
   setText('paddock-delete-move-modal-title', t('move.deletePaddockTitle'))
   setIconButton('move-modal-submit', t('move.submit'))
+  setText('zone-bulk-move-submit', t('move.bulkSubmit'))
+  setText('zone-bulk-move-sheep-list-label', t('move.bulkSheepLabel'))
 
   const langSelect = document.getElementById('language-select')
   if(langSelect) langSelect.value = currentLang
@@ -3061,12 +3064,15 @@ function openZoneDeleteMoveModal(sourcePaddockId, sourceZoneId, sheepCount){
 
   const sourceLabel = document.getElementById('zone-delete-source-name')
   const sheepLabel = document.getElementById('zone-delete-sheep-count')
+  const sheepInZone = state.sheep.filter(s => s.paddockId === sourcePaddockId && s.zoneId === sourceZoneId)
   if(sourceLabel){
     sourceLabel.textContent = `${sourcePaddock.name} / ${sourceZone.name}`
   }
   if(sheepLabel){
     sheepLabel.textContent = `${sheepCount} ${sheepCount === 1 ? t('entity.sheep') : t('entity.sheep')}`
   }
+
+  renderZoneDeleteSheepSelection(sheepInZone)
 
   pendingZoneDeletion = { sourcePaddockId, sourceZoneId }
 
@@ -3131,6 +3137,67 @@ function populateZoneBulkMoveTargets(selectedPaddockId){
   }
 }
 
+function syncZoneBulkMoveSubmitState(){
+  const submitBtn = document.getElementById('zone-bulk-move-submit')
+  const targetZone = document.getElementById('zone-bulk-move-target-zone-modal')
+  const sheepList = document.getElementById('zone-bulk-move-sheep-list')
+  if(!submitBtn || !targetZone || !sheepList) return
+
+  const anyChecked = !!sheepList.querySelector('input[name="zone-bulk-move-sheep"]:checked')
+  submitBtn.disabled = !targetZone.value || !anyChecked
+}
+
+function syncZoneDeleteMoveSubmitState(){
+  const submitBtn = document.getElementById('zone-delete-move-submit')
+  const targetZone = document.getElementById('zone-delete-target-zone-modal')
+  const sheepList = document.getElementById('zone-delete-sheep-list')
+  if(!submitBtn || !targetZone || !sheepList) return
+
+  const anyChecked = !!sheepList.querySelector('input[name="zone-delete-sheep"]:checked')
+  submitBtn.disabled = !targetZone.value || !anyChecked
+}
+
+function renderZoneBulkMoveSheepSelection(sheepInZone){
+  const container = document.getElementById('zone-bulk-move-sheep-list')
+  const submitBtn = document.getElementById('zone-bulk-move-submit')
+  if(!container) return
+
+  if(!sheepInZone.length){
+    container.innerHTML = `<div class="empty">${t('sheep.empty')}</div>`
+    if(submitBtn) submitBtn.disabled = true
+    return
+  }
+
+  container.innerHTML = sheepInZone.map(sheep => `
+    <label class="modal-sheep-option" for="zone-bulk-move-sheep-${sheep.id}">
+      <input id="zone-bulk-move-sheep-${sheep.id}" type="checkbox" name="zone-bulk-move-sheep" value="${sheep.id}" checked>
+      <span>${sheep.tag}</span>
+    </label>
+  `).join('')
+
+  syncZoneBulkMoveSubmitState()
+}
+
+function renderZoneDeleteSheepSelection(sheepInZone){
+  const container = document.getElementById('zone-delete-sheep-list')
+  if(!container) return
+
+  if(!sheepInZone.length){
+    container.innerHTML = `<div class="empty">${t('sheep.empty')}</div>`
+    syncZoneDeleteMoveSubmitState()
+    return
+  }
+
+  container.innerHTML = sheepInZone.map(sheep => `
+    <label class="modal-sheep-option" for="zone-delete-sheep-${sheep.id}">
+      <input id="zone-delete-sheep-${sheep.id}" type="checkbox" name="zone-delete-sheep" value="${sheep.id}" checked>
+      <span>${sheep.tag}</span>
+    </label>
+  `).join('')
+
+  syncZoneDeleteMoveSubmitState()
+}
+
 function openZoneBulkMoveModal(sourcePaddockId, sourceZoneId){
   const sourcePaddock = getPaddock(sourcePaddockId)
   const sourceZone = getZone(sourcePaddockId, sourceZoneId)
@@ -3158,6 +3225,8 @@ function openZoneBulkMoveModal(sourcePaddockId, sourceZoneId){
   if(sheepLabel){
     sheepLabel.textContent = `${sheepInZone.length} ${sheepInZone.length === 1 ? t('entity.sheep') : t('entity.sheep')}`
   }
+
+  renderZoneBulkMoveSheepSelection(sheepInZone)
 
   populateZoneBulkMoveTargets(targetPaddocks[0].id)
   openModal('zone-bulk-move-modal')
@@ -4268,10 +4337,14 @@ if(zoneDeleteTargetPaddockModal){
 const zoneDeleteTargetZoneModal = document.getElementById('zone-delete-target-zone-modal')
 if(zoneDeleteTargetZoneModal){
   zoneDeleteTargetZoneModal.addEventListener('change', () => {
-    const submitBtn = document.getElementById('zone-delete-move-submit')
-    if(submitBtn){
-      submitBtn.disabled = !zoneDeleteTargetZoneModal.value
-    }
+    syncZoneDeleteMoveSubmitState()
+  })
+}
+
+const zoneDeleteSheepList = document.getElementById('zone-delete-sheep-list')
+if(zoneDeleteSheepList){
+  zoneDeleteSheepList.addEventListener('change', () => {
+    syncZoneDeleteMoveSubmitState()
   })
 }
 
@@ -4285,10 +4358,14 @@ if(zoneBulkMoveTargetPaddockModal){
 const zoneBulkMoveTargetZoneModal = document.getElementById('zone-bulk-move-target-zone-modal')
 if(zoneBulkMoveTargetZoneModal){
   zoneBulkMoveTargetZoneModal.addEventListener('change', () => {
-    const submitBtn = document.getElementById('zone-bulk-move-submit')
-    if(submitBtn){
-      submitBtn.disabled = !zoneBulkMoveTargetZoneModal.value
-    }
+    syncZoneBulkMoveSubmitState()
+  })
+}
+
+const zoneBulkMoveSheepList = document.getElementById('zone-bulk-move-sheep-list')
+if(zoneBulkMoveSheepList){
+  zoneBulkMoveSheepList.addEventListener('change', () => {
+    syncZoneBulkMoveSubmitState()
   })
 }
 
@@ -4320,7 +4397,9 @@ document.getElementById('zone-delete-move-form')?.addEventListener('submit', e =
   const sourcePaddock = getPaddock(pendingZoneDeletion.sourcePaddockId)
   if(!sourcePaddock) return
   const sourceZone = getZone(pendingZoneDeletion.sourcePaddockId, pendingZoneDeletion.sourceZoneId)
-  const sheepToMove = state.sheep.filter(s => s.paddockId === pendingZoneDeletion.sourcePaddockId && s.zoneId === pendingZoneDeletion.sourceZoneId)
+  const selectedSheepIds = Array.from(document.querySelectorAll('#zone-delete-sheep-list input[name="zone-delete-sheep"]:checked')).map(input => input.value)
+  const sheepToMove = state.sheep.filter(s => s.paddockId === pendingZoneDeletion.sourcePaddockId && s.zoneId === pendingZoneDeletion.sourceZoneId && selectedSheepIds.includes(s.id))
+  if(!sheepToMove.length) return
   const fromLabel = `${sourcePaddock.name} / ${sourceZone ? sourceZone.name : t('unknown')}`
   const toLabel = `${paddockName(targetPaddockId)} / ${zoneName(targetPaddockId, targetZoneId)}`
   sheepToMove.forEach(sheep => {
@@ -4332,7 +4411,7 @@ document.getElementById('zone-delete-move-form')?.addEventListener('submit', e =
   })
 
   state.sheep.forEach(s => {
-    if(s.paddockId === pendingZoneDeletion.sourcePaddockId && s.zoneId === pendingZoneDeletion.sourceZoneId){
+    if(sheepToMove.some(moveSheep => moveSheep.id === s.id)){
       s.paddockId = targetPaddockId
       s.zoneId = targetZoneId
       s.lastUpdated = Date.now()
@@ -4396,7 +4475,9 @@ document.getElementById('zone-bulk-move-form')?.addEventListener('submit', e => 
   if(targetPaddockId === pendingZoneBulkMove.sourcePaddockId && targetZoneId === pendingZoneBulkMove.sourceZoneId) return
   const sourcePaddock = getPaddock(pendingZoneBulkMove.sourcePaddockId)
   const sourceZone = getZone(pendingZoneBulkMove.sourcePaddockId, pendingZoneBulkMove.sourceZoneId)
-  const sheepToMove = state.sheep.filter(s => s.paddockId === pendingZoneBulkMove.sourcePaddockId && s.zoneId === pendingZoneBulkMove.sourceZoneId)
+  const selectedSheepIds = Array.from(document.querySelectorAll('#zone-bulk-move-sheep-list input[name="zone-bulk-move-sheep"]:checked')).map(input => input.value)
+  const sheepToMove = state.sheep.filter(s => s.paddockId === pendingZoneBulkMove.sourcePaddockId && s.zoneId === pendingZoneBulkMove.sourceZoneId && selectedSheepIds.includes(s.id))
+  if(!sheepToMove.length) return
   const fromLabel = `${sourcePaddock ? sourcePaddock.name : t('unknown')} / ${sourceZone ? sourceZone.name : t('unknown')}`
   const toLabel = `${paddockName(targetPaddockId)} / ${zoneName(targetPaddockId, targetZoneId)}`
   sheepToMove.forEach(sheep => {
@@ -4408,7 +4489,7 @@ document.getElementById('zone-bulk-move-form')?.addEventListener('submit', e => 
   })
 
   state.sheep.forEach(s => {
-    if(s.paddockId === pendingZoneBulkMove.sourcePaddockId && s.zoneId === pendingZoneBulkMove.sourceZoneId){
+    if(sheepToMove.some(moveSheep => moveSheep.id === s.id)){
       s.paddockId = targetPaddockId
       s.zoneId = targetZoneId
       s.lastUpdated = Date.now()
