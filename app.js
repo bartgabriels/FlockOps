@@ -167,6 +167,10 @@ function updateAuthUi(){
   const label = document.getElementById('auth-toggle-label')
   const userLabel = document.getElementById('auth-user-label')
   const userBlock = document.getElementById('auth-user-block')
+  const toggleButton = document.getElementById('auth-toggle-btn')
+  const profileBlock = document.getElementById('auth-profile-block')
+  const dropdown = document.getElementById('auth-profile-dropdown')
+  const logoutMenuButton = document.getElementById('auth-logout-menu-btn')
   if(indicator){
     indicator.classList.toggle('is-online', !!authToken)
     indicator.classList.toggle('is-offline', !authToken)
@@ -179,6 +183,18 @@ function updateAuthUi(){
   }
   if(userBlock){
     userBlock.classList.toggle('is-online', !!authToken)
+  }
+  if(toggleButton){
+    toggleButton.style.display = authToken ? 'none' : 'inline-flex'
+  }
+  if(profileBlock){
+    profileBlock.style.display = authToken ? 'inline-flex' : 'none'
+  }
+  if(dropdown){
+    dropdown.setAttribute('aria-hidden', authToken ? 'false' : 'true')
+  }
+  if(logoutMenuButton){
+    logoutMenuButton.style.display = authToken ? 'inline-flex' : 'none'
   }
 }
 
