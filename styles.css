@@ -51,6 +51,14 @@ form button,
 
 h1{margin:0;font-size:1.5rem}
 
+#app-title{
+  cursor:pointer;
+}
+
+#app-title:hover{
+  text-decoration:underline;
+}
+
 .app-title-block{
   display:flex;
   flex-direction:column;
@@ -102,6 +110,10 @@ h1{margin:0;font-size:1.5rem}
 .tab-button:focus-visible{
   outline:2px solid var(--focus);
   outline-offset:2px;
+}
+
+.tab-button--hidden{
+  display:none;
 }
 
 .tab-panel.hidden{
@@ -256,6 +268,25 @@ button.add-zone-button:hover {
   display:flex;
   gap:8px;
   flex-wrap:wrap;
+}
+
+.exit-download-toggle-button{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+}
+
+#exit-download-toggle-label{
+  font-size:0.85rem;
+  white-space:nowrap;
+}
+
+#exit-download-toggle-state{
+  font-size:0.85rem;
+  font-weight:700;
+  padding:2px 8px;
+  border-radius:999px;
+  background:rgba(27, 36, 33, 0.08);
 }
 
 .section-header h2{
@@ -848,12 +879,112 @@ form button{
 }
 
 /* sheep grid cards */
+.sheep-overview{
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+}
+
+.sheep-out-block-section{
+  margin-top:14px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:14px;
+  background:#f9fbf9;
+}
+
+.sheep-out-block-section .sheep-overview{
+  gap:12px;
+}
+
+.sheep-out-header h3,
+.sheep-out-block-section .out-of-flock-toggle,
+.sheep-out-block-section .out-of-flock-toggle span{
+  color:var(--text);
+}
+
+.sheep-section h3{
+  margin:0;
+  font-size:0.95rem;
+}
+
+.sheep-section--out{
+  border-top:1px solid var(--border);
+  padding-top:12px;
+}
+
 .sheep-grid{
   display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));
   gap:12px;
   margin:0;
   padding:0;
+}
+
+.pedigree-list{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+.pedigree-single{
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:#fff;
+  padding:10px;
+}
+
+.pedigree-tree-wrap{
+  overflow-x:auto;
+}
+
+.pedigree-tree-wrap--full{
+  overflow:auto;
+  max-height:72vh;
+}
+
+.pedigree-tree-svg{
+  width:100%;
+  min-width:760px;
+  height:220px;
+  display:block;
+}
+
+.pedigree-tree-svg--full{
+  min-width:860px;
+  min-height:280px;
+}
+
+.pedigree-line{
+  stroke:#b5c6bb;
+  stroke-width:2;
+}
+
+.pedigree-node-box{
+  fill:#f7fbf8;
+  stroke:#c8d8cd;
+  stroke-width:1.5;
+}
+
+.pedigree-node-box--focus{
+  fill:#ddeee2;
+  stroke:#98b7a4;
+}
+
+.pedigree-node-box--out{
+  fill:#eef3ef;
+  stroke:#a8b7ac;
+}
+
+.pedigree-node-text{
+  fill:var(--text);
+  font-size:13px;
+  font-weight:600;
+  dominant-baseline:middle;
+}
+
+.pedigree-node-text--focus{
+  fill:#214633;
 }
 
 @media (max-width: 700px) {
@@ -876,6 +1007,115 @@ form button{
   min-height:0;
   gap:12px;
   overflow:hidden;
+}
+
+.sheep-card--out{
+  background:
+    linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)),
+    url('wol.png') center/cover no-repeat;
+  border-color:rgba(193,206,199,0.8);
+  aspect-ratio:auto;
+  min-height:120px;
+  padding:10px;
+  gap:8px;
+}
+
+.sheep-card--out .sheep-name-label,
+.sheep-card--out small,
+.sheep-card--out .sheep-name-earmark,
+.sheep-card--out .sheep-out-status,
+.sheep-card--out .sheep-out-notes{
+  color:#fff;
+  text-shadow:none;
+}
+
+.sheep-card--out .sheep-card-body{
+  gap:6px;
+}
+
+.sheep-actions--single{
+  grid-template-columns:1fr;
+}
+
+.sheep-out-visibility-button{
+  background:#F0F3F5;
+  color:#29455f;
+  border:1px solid #c3d1df;
+  border-radius:999px;
+  min-height:28px;
+  cursor:pointer;
+}
+
+.sheep-out-visibility-button:hover{
+  background:#E3ECF2;
+}
+
+.sheep-hidden-badge{
+  font-size:0.68rem;
+  padding:2px 7px;
+  border-radius:999px;
+  background:#EDE6CF;
+  color:#6b5b2f;
+}
+
+.sheep-out-status{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  margin-left:8px;
+  font-size:0.8rem;
+  color:#3f5b4a;
+  font-weight:600;
+}
+
+.sheep-out-notes{
+  color:var(--text-secondary);
+  font-style:italic;
+}
+
+.out-of-flock-toggle{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  font-size:0.82rem;
+  color:var(--text-secondary);
+}
+
+.out-of-flock-toggle input[type="checkbox"]{
+  appearance:none;
+  width:36px;
+  height:20px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background:#dfe6ea;
+  position:relative;
+  cursor:pointer;
+  transition:background 0.2s ease;
+}
+
+.out-of-flock-toggle input[type="checkbox"]::after{
+  content:'';
+  position:absolute;
+  top:2px;
+  left:2px;
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  background:#fff;
+  box-shadow:0 1px 3px rgba(0,0,0,0.2);
+  transition:transform 0.2s ease;
+}
+
+.out-of-flock-toggle input[type="checkbox"]:checked{
+  background:#7cb58f;
+}
+
+.out-of-flock-toggle input[type="checkbox"]:checked::after{
+  transform:translateX(16px);
+}
+
+.sheep-out-empty{
+  grid-column:1 / -1;
 }
 
 .add-sheep-card{
@@ -910,6 +1150,22 @@ form button{
 
 .add-paddock-block:hover{
   background:#F2F6F4;
+}
+
+.add-sheep-block{
+  grid-column:1 / -1;
+  margin:0;
+  min-height:72px;
+  background:var(--chip-bg) url('wol.png') no-repeat center bottom;
+  background-size:cover;
+}
+
+.add-sheep-block:hover{
+  background-image:linear-gradient(rgba(11, 110, 79, 0.22), rgba(11, 110, 79, 0.22)), url('wol.png');
+  background-repeat:no-repeat, no-repeat;
+  background-position:center bottom, center bottom;
+  background-size:cover, cover;
+  background-color:var(--chip-bg);
 }
 
 .add-sheep-card::after{
@@ -980,6 +1236,11 @@ form button{
 .sheep-card-body small{
   color:var(--text-secondary);
   font-size:0.72rem;
+}
+
+.sheep-card--out .sheep-out-reason{
+  color:#f1f1f1;
+  text-shadow:none;
 }
 
 .sheep-birthdate-input{
@@ -1074,6 +1335,144 @@ form button{
   border-radius:8px;
   background:var(--surface-muted);
   padding:6px 8px;
+}
+
+.history-sheep-list{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:6px;
+}
+
+.history-sheep-chip{
+  display:inline-flex;
+  align-items:center;
+  padding:2px 8px;
+  border-radius:999px;
+  background:var(--chip-bg);
+  color:var(--chip-text);
+  font-size:0.82rem;
+  line-height:1.2;
+}
+
+.planning-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.planning-filters{
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+  gap:10px;
+  margin:0 0 12px;
+}
+
+.planning-filters label{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  font-size:0.85rem;
+  font-weight:700;
+  color:var(--text-secondary);
+}
+
+.planning-filters select{
+  font-size:0.9rem;
+}
+
+.planning-month{
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--card);
+  padding:10px;
+}
+
+.planning-month-title{
+  margin:0 0 8px;
+  font-size:1rem;
+}
+
+.planning-month-list{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.planning-item{
+  display:grid;
+  grid-template-columns:110px 1fr 1fr auto auto auto;
+  gap:4px 10px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:var(--surface-muted);
+  padding:8px;
+  align-items:center;
+}
+
+.planning-item-type{
+  color:var(--text-secondary);
+  font-size:0.8rem;
+  font-weight:700;
+}
+
+.planning-item-status{
+  font-size:0.75rem;
+  font-weight:700;
+  border-radius:999px;
+  padding:2px 8px;
+  white-space:nowrap;
+}
+
+.planning-item-status--planned{
+  background:#E6EEF8;
+  color:#234A75;
+}
+
+.planning-item-status--done{
+  background:#E6F3EB;
+  color:#1F6E4C;
+}
+
+.planning-item-status--cancelled{
+  background:#F3ECE6;
+  color:#6F5A40;
+}
+
+.planning-mark-done-button{
+  background:#E6F3EB;
+  color:#1F6E4C;
+  border:1px solid #BBDDCB;
+  border-radius:999px;
+  padding:4px 10px;
+  cursor:pointer;
+  font-size:0.78rem;
+  white-space:nowrap;
+}
+
+.planning-mark-done-button:hover{
+  background:#D7ECDF;
+}
+
+.planning-select-all-button{
+  margin-bottom:6px;
+}
+
+.planning-item small{
+  grid-column:1 / -1;
+  color:var(--text-secondary);
+}
+
+@media (max-width: 700px) {
+  .planning-filters{
+    grid-template-columns:1fr;
+  }
+
+  .planning-item{
+    grid-template-columns:1fr;
+    gap:3px;
+    align-items:flex-start;
+  }
 }
 
 .billing-card{
@@ -1237,7 +1636,7 @@ form button{
   box-shadow:0 18px 48px rgba(15,23,32,0.2);
   padding:16px;
   width:100%;
-  max-width:280px;
+  max-width:380px;
   z-index:1;
   max-height:80vh;
   overflow-y:auto;
@@ -1246,7 +1645,11 @@ form button{
 }
 
 .modal-panel--wide{
-  max-width:360px;
+  max-width:480px;
+}
+
+.planning-item-modal-panel{
+  max-width:620px;
 }
 
 .modal-panel h2{
@@ -1321,7 +1724,7 @@ form button{
 
 .modal-sheep-grid{
   display:grid;
-  grid-template-columns:repeat(2, minmax(0, 1fr));
+  grid-template-columns:repeat(3, minmax(0, 1fr));
   gap:6px 10px;
   max-height:160px;
   overflow-y:auto;
@@ -1341,6 +1744,12 @@ form button{
 
 .modal-sheep-option input[type="checkbox"]{
   width:auto;
+}
+
+@media (max-width: 700px) {
+  .modal-sheep-grid{
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+  }
 }
 
 .modal-panel input,

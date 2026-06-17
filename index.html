@@ -49,7 +49,7 @@
   <main class="wrap">
     <div class="top-bar">
       <div class="app-title-block">
-        <h1 id="app-title">FlockOps</h1>
+        <h1 id="app-title" role="button" tabindex="0" aria-label="Open facturatie">FlockOps</h1>
         <p id="app-subtitle" class="app-subtitle">Een CALM-Hoeve Project</p>
       </div>
       <div class="action-row">
@@ -58,6 +58,10 @@
           <option value="en">English</option>
           <option value="fr">Français</option>
         </select>
+        <button id="exit-download-toggle-btn" type="button" class="section-button exit-download-toggle-button" aria-pressed="false">
+          <span id="exit-download-toggle-label">Auto-download bij sluiten</span>
+          <span id="exit-download-toggle-state">Uit</span>
+        </button>
         <button id="download-data-btn" type="button" class="section-button">Opslaan</button>
         <button id="upload-data-btn" type="button" class="section-button">Upload</button>
         <button id="clear-data-btn" type="button" class="section-button">Wissen</button>
@@ -93,6 +97,33 @@
         aria-controls="tab-history-panel"
         data-tab="history"
       >Historiek</button>
+      <button
+        id="tab-planning-btn"
+        class="tab-button"
+        type="button"
+        role="tab"
+        aria-selected="false"
+        aria-controls="tab-planning-panel"
+        data-tab="planning"
+      >Planning</button>
+      <button
+        id="tab-pedigree-btn"
+        class="tab-button"
+        type="button"
+        role="tab"
+        aria-selected="false"
+        aria-controls="tab-pedigree-panel"
+        data-tab="pedigree"
+      >Stamboom</button>
+      <button
+        id="tab-billing-btn"
+        class="tab-button tab-button--hidden"
+        type="button"
+        role="tab"
+        aria-selected="false"
+        aria-controls="tab-billing-panel"
+        data-tab="billing"
+      >Facturatie</button>
     </div>
 
     <div id="tab-paddocks-panel" class="tab-panel" role="tabpanel" aria-labelledby="tab-paddocks-btn">
@@ -109,7 +140,10 @@
         <div class="section-header">
           <h2 id="section-sheep-title">Schapen</h2>
         </div>
-        <div id="sheep-list" class="sheep-grid"></div>
+        <div id="sheep-list" class="sheep-overview"></div>
+      </section>
+      <section class="sheep-out-block-section">
+        <div id="sheep-out-list" class="sheep-overview"></div>
       </section>
     </div>
 
@@ -122,7 +156,103 @@
       </section>
     </div>
 
+    <div id="tab-planning-panel" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-planning-btn">
+      <section>
+        <div class="section-header">
+          <h2 id="section-planning-title">Planning</h2>
+          <button type="button" id="planning-add-btn" class="section-button">Planning toevoegen</button>
+        </div>
+        <div class="planning-filters">
+          <label>
+            <span id="planning-filter-period-label">Periode</span>
+            <select id="planning-filter-period">
+              <option id="planning-filter-period-option-30" value="30">Volgende 30 dagen</option>
+              <option id="planning-filter-period-option-90" value="90">Volgende 90 dagen</option>
+              <option id="planning-filter-period-option-all" value="all" selected>Alles in de toekomst</option>
+            </select>
+          </label>
+          <label>
+            <span id="planning-filter-paddock-label">Weide</span>
+            <select id="planning-filter-paddock">
+              <option value="all">Alle</option>
+            </select>
+          </label>
+          <label>
+            <span id="planning-filter-sheep-label">Schaap</span>
+            <select id="planning-filter-sheep">
+              <option value="all">Alle</option>
+            </select>
+          </label>
+        </div>
+        <div id="planning-list" class="planning-list"></div>
+      </section>
+    </div>
+
+    <div id="tab-pedigree-panel" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-pedigree-btn">
+      <section>
+        <div class="section-header">
+          <h2 id="section-pedigree-title">Stamboom</h2>
+        </div>
+        <div id="pedigree-list" class="pedigree-list"></div>
+      </section>
+    </div>
+
+    <div id="tab-billing-panel" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-billing-btn">
+      <section>
+        <div class="section-header">
+          <h2 id="section-billing-title">Facturatie</h2>
+        </div>
+        <div id="billing-summary" class="billing-summary"></div>
+      </section>
+    </div>
+
   </main>
+
+  <div id="planning-item-modal" class="modal hidden" aria-hidden="true">
+    <div id="planning-item-modal-backdrop" class="modal-backdrop"></div>
+    <div class="modal-panel modal-panel--wide planning-item-modal-panel">
+      <button type="button" id="planning-item-modal-close" class="modal-close">✕</button>
+      <h2 id="planning-item-modal-title">Planning toevoegen</h2>
+      <form id="planning-item-form" class="group-form">
+        <div class="modal-field">
+          <label id="planning-item-type-label" for="planning-item-type">Type</label>
+          <select id="planning-item-type" required>
+            <option id="planning-item-type-option-injection" value="injection">Injectie</option>
+            <option id="planning-item-type-option-shearing" value="shearing">Scheren</option>
+            <option id="planning-item-type-option-custom" value="custom" selected>Aangepast</option>
+          </select>
+        </div>
+        <div id="planning-item-sheep-field" class="modal-field">
+          <label id="planning-item-sheep-label">Schapen (optioneel)</label>
+          <button type="button" id="planning-item-select-all-btn" class="section-button planning-select-all-button">Selecteer alle</button>
+          <div id="planning-item-sheep-list" class="modal-sheep-grid"></div>
+        </div>
+        <div id="planning-item-paddock-field" class="modal-field">
+          <label id="planning-item-paddock-label">Weide (optioneel)</label>
+          <button type="button" id="planning-item-select-all-paddocks-btn" class="section-button planning-select-all-button">Selecteer alle weides</button>
+          <div id="planning-item-paddock-list" class="modal-sheep-grid"></div>
+        </div>
+        <div id="planning-item-zone-field" class="modal-field">
+          <label id="planning-item-zone-label">Zone (optioneel)</label>
+          <button type="button" id="planning-item-select-all-zones-btn" class="section-button planning-select-all-button">Selecteer alle zones</button>
+          <div id="planning-item-zone-list" class="modal-sheep-grid"></div>
+        </div>
+        <div class="modal-field">
+          <label id="planning-item-date-label" for="planning-item-date">Geplande datum</label>
+          <input id="planning-item-date" type="date" required>
+        </div>
+        <div class="modal-field">
+          <label id="planning-item-repeat-date-label" for="planning-item-repeat-date">Herhalen tegen (optioneel)</label>
+          <input id="planning-item-repeat-date" type="date">
+        </div>
+        <div class="modal-field">
+          <label id="planning-item-detail-label" for="planning-item-detail">Detail</label>
+          <input id="planning-item-detail" type="text" placeholder="Bijv. Product of actie">
+        </div>
+        <button type="submit" id="planning-item-submit" class="icon-button"></button>
+      </form>
+    </div>
+  </div>
 
   <div id="paddock-modal" class="modal hidden" aria-hidden="true">
     <div id="paddock-modal-backdrop" class="modal-backdrop"></div>
@@ -521,6 +651,37 @@
         <button type="button" id="delete-confirm-cancel">Annuleren</button>
         <button type="button" id="delete-confirm-submit">Verwijderen</button>
       </div>
+    </div>
+  </div>
+
+  <div id="sheep-out-modal" class="modal hidden" aria-hidden="true">
+    <div id="sheep-out-modal-backdrop" class="modal-backdrop"></div>
+    <div class="modal-panel">
+      <button type="button" id="sheep-out-modal-close" class="modal-close">✕</button>
+      <h2 id="sheep-out-modal-title">Uit de kudde zetten</h2>
+      <div class="modal-field">
+        <label id="sheep-out-modal-sheep-label">Schaap</label>
+        <div id="sheep-out-modal-sheep-name">-</div>
+      </div>
+      <form id="sheep-out-modal-form" class="group-form">
+        <div class="modal-field">
+          <label id="sheep-out-modal-reason-label" for="sheep-out-modal-reason">Reden</label>
+          <select id="sheep-out-modal-reason" required>
+            <option id="sheep-out-reason-option-slaughter" value="slaughter">Geslacht</option>
+            <option id="sheep-out-reason-option-deceased" value="deceased">Overleden</option>
+            <option id="sheep-out-reason-option-sold" value="sold">Verkocht</option>
+          </select>
+        </div>
+        <div class="modal-field">
+          <label id="sheep-out-modal-date-label" for="sheep-out-modal-date">Datum</label>
+          <input id="sheep-out-modal-date" type="date" required>
+        </div>
+        <div class="modal-field">
+          <label id="sheep-out-modal-notes-label" for="sheep-out-modal-notes">Opmerkingen (optioneel)</label>
+          <textarea id="sheep-out-modal-notes" rows="3" placeholder="Extra info"></textarea>
+        </div>
+        <button type="submit" id="sheep-out-modal-submit" class="icon-button"></button>
+      </form>
     </div>
   </div>
 

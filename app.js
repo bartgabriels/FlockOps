@@ -1,6 +1,7 @@
 const KEY = 'flockops:data'
 const LANG_KEY = 'flockops:lang'
-const state = { paddocks: [], sheep: [], history: [] }
+const EXIT_DOWNLOAD_KEY = 'flockops:autoDownloadOnClose'
+const state = { paddocks: [], sheep: [], history: [], events: [], planningItems: [] }
 const collapsedPaddockIds = new Set()
 const expandedWeatherPaddocks = new Set()
 const weatherCache = {}
@@ -20,8 +21,12 @@ let pendingShearingPaddockId = null
 let pendingShearingZoneId = null
 let pendingInjectionSheepId = null
 let pendingShearingSheepId = null
+let pendingPlanningItemId = null
+let pendingOutOfFlockSheepId = null
 let hasTriggeredExitDownload = false
 let reopenEmptyStorageModalAfterUpload = false
+let hasInitializedPlanningFilters = false
+let showAllOutOfFlockSheep = false
 
 const SEO_BY_LANG = {
   nl: {
@@ -84,6 +89,9 @@ const translations = {
     'ui.save': 'Opslaan',
     'ui.upload': 'Upload',
     'ui.clear': 'Wissen',
+    'ui.exitDownload.label': 'Auto-download bij sluiten',
+    'ui.exitDownload.on': 'Aan',
+    'ui.exitDownload.off': 'Uit',
     'onboarding.empty.title': 'Begin met je kuddebeheer',
     'onboarding.empty.description': 'Er is nog geen opgeslagen configuratie gevonden. Kies hoe je wilt starten.',
     'onboarding.empty.startZero': 'Start from Zero',
@@ -93,14 +101,60 @@ const translations = {
     'tab.paddocksZones': 'Weides en zones',
     'tab.sheep': 'Schapen',
     'tab.history': 'Historiek',
+    'tab.pedigree': 'Stamboom',
     'tab.billing': 'Facturatie',
     'section.paddocks': 'Weides',
     'section.sheep': 'Schapen',
     'section.history': 'Historiek',
+    'section.planning': 'Planning',
+    'section.pedigree': 'Stamboom',
     'section.billing': 'Facturatie',
+    'pedigree.empty': 'Geen stamboomgegevens beschikbaar.',
+    'pedigree.mother': 'Moeder',
+    'pedigree.father': 'Vader',
+    'pedigree.grandparents': 'Grootouders',
+    'planning.filter.period': 'Periode',
+    'planning.filter.paddock': 'Weide',
+    'planning.filter.sheep': 'Schaap',
+    'planning.filter.period.30': 'Volgende 30 dagen',
+    'planning.filter.period.90': 'Volgende 90 dagen',
+    'planning.filter.period.all': 'Alles in de toekomst',
+    'planning.filter.all': 'Alle',
+    'planning.empty': 'Geen geplande herhalingen gevonden.',
+    'planning.add': 'Planning toevoegen',
+    'planning.add.title': 'Planning toevoegen',
+    'planning.add.type': 'Type',
+    'planning.add.type.injection': 'Injectie',
+    'planning.add.type.shearing': 'Scheren',
+    'planning.add.type.custom': 'Aangepast',
+    'planning.add.sheep': 'Schapen (optioneel)',
+    'planning.add.paddock': 'Weide (optioneel)',
+    'planning.add.zone': 'Zone (optioneel)',
+    'planning.add.selectAll': 'Selecteer alle',
+    'planning.add.selectAllPaddocks': 'Selecteer alle weides',
+    'planning.add.selectAllZones': 'Selecteer alle zones',
+    'planning.add.date': 'Geplande datum',
+    'planning.add.repeatDate': 'Herhalen tegen (optioneel)',
+    'planning.add.detail': 'Detail',
+    'planning.add.detailPlaceholder': 'Bijv. Product of actie',
+    'planning.status.planned': 'Gepland',
+    'planning.status.done': 'Uitgevoerd',
+    'planning.status.cancelled': 'Geannuleerd',
+    'planning.markDone': 'Markeer uitgevoerd',
+    'planning.type.injection': 'Injectie',
+    'planning.type.shearing': 'Scheren',
+    'planning.type.custom': 'Aangepast',
+    'planning.product': 'Product: {product}',
+    'history.planning.created': 'Planning toegevoegd: {type} op {date}',
+    'history.planning.completed': 'Planning uitgevoerd: {type} op {date}',
+    'planning.lastDate': 'Laatste injectie: {date}',
+    'history.repeatBy': 'Herhalen tegen {date}',
     'billing.fields': 'Velden',
     'billing.zones': 'Zones',
     'billing.sheep': 'Schapen',
+    'billing.users': 'Gebruikers',
+    'billing.sheep.active': 'Actieve schapen',
+    'billing.sheep.inactive': 'Inactieve schapen',
     'billing.rateMonthly': '{price} / maand',
     'billing.unlimited': 'Onbeperkt aantal',
     'billing.included': 'Inbegrepen',
@@ -150,6 +204,22 @@ const translations = {
     'sheep.location.unknownZone': 'Onbekende zone',
     'sheep.location.none': 'Geen zone',
     'sheep.empty': 'Geen schapen',
+    'sheep.active.title': 'In de kudde',
+    'sheep.out.title': 'Uit de kudde',
+    'sheep.out.empty': 'Geen schapen uit de kudde.',
+    'sheep.out.showAll': 'Toon alle',
+    'sheep.out.hide': 'Verberg',
+    'sheep.out.show': 'Toon',
+    'sheep.out.hiddenBadge': 'Verborgen',
+    'sheep.out.modal.title': 'Uit de kudde zetten',
+    'sheep.out.modal.reason': 'Reden',
+    'sheep.out.modal.date': 'Datum',
+    'sheep.out.modal.notes': 'Opmerkingen (optioneel)',
+    'sheep.out.modal.notesPlaceholder': 'Extra info',
+    'sheep.out.reason.slaughter': 'Geslacht',
+    'sheep.out.reason.deceased': 'Overleden',
+    'sheep.out.reason.sold': 'Verkocht',
+    'history.sheep.removedFromFlock': '{tag} uit de kudde ({reason}) op {date}',
     'select.paddock.first': 'Kies eerst een weide',
     'select.paddock.choose': 'Kies weide',
     'select.zone.choose': 'Kies zone',
@@ -195,6 +265,8 @@ const translations = {
     'aria.registerSheepInjection': 'Injectie registreren voor {tag}',
     'aria.registerSheepShearing': 'Scheren registreren voor {tag}',
     'aria.moveSheep': 'Verplaats {tag}',
+    'aria.moveSheepOut': 'Zet {tag} uit de kudde',
+    'aria.toggleOutVisibility': 'Wijzig zichtbaarheid voor {tag}',
     'aria.weatherForecast': 'Weervoorspelling',
     'paddock.add.title': 'Weide toevoegen',
     'paddock.nameLabel': 'Naam weide',
@@ -307,6 +379,9 @@ const translations = {
     'ui.save': 'Save',
     'ui.upload': 'Upload',
     'ui.clear': 'Clear',
+    'ui.exitDownload.label': 'Auto-download on close',
+    'ui.exitDownload.on': 'On',
+    'ui.exitDownload.off': 'Off',
     'onboarding.empty.title': 'Start managing your flock',
     'onboarding.empty.description': 'No saved configuration was found yet. Choose how you want to begin.',
     'onboarding.empty.startZero': 'Start from Zero',
@@ -316,14 +391,60 @@ const translations = {
     'tab.paddocksZones': 'Paddocks and zones',
     'tab.sheep': 'Sheep',
     'tab.history': 'History',
+    'tab.pedigree': 'Pedigree',
     'tab.billing': 'Billing',
     'section.paddocks': 'Paddocks',
     'section.sheep': 'Sheep',
     'section.history': 'History',
+    'section.planning': 'Planning',
+    'section.pedigree': 'Pedigree',
     'section.billing': 'Billing',
+    'pedigree.empty': 'No pedigree data available.',
+    'pedigree.mother': 'Mother',
+    'pedigree.father': 'Father',
+    'pedigree.grandparents': 'Grandparents',
+    'planning.filter.period': 'Period',
+    'planning.filter.paddock': 'Paddock',
+    'planning.filter.sheep': 'Sheep',
+    'planning.filter.period.30': 'Next 30 days',
+    'planning.filter.period.90': 'Next 90 days',
+    'planning.filter.period.all': 'All future items',
+    'planning.filter.all': 'All',
+    'planning.empty': 'No scheduled repeats found.',
+    'planning.add': 'Add planning',
+    'planning.add.title': 'Add planning item',
+    'planning.add.type': 'Type',
+    'planning.add.type.injection': 'Injection',
+    'planning.add.type.shearing': 'Shearing',
+    'planning.add.type.custom': 'Custom',
+    'planning.add.sheep': 'Sheep (optional)',
+    'planning.add.paddock': 'Paddock (optional)',
+    'planning.add.zone': 'Zone (optional)',
+    'planning.add.selectAll': 'Select all',
+    'planning.add.selectAllPaddocks': 'Select all paddocks',
+    'planning.add.selectAllZones': 'Select all zones',
+    'planning.add.date': 'Planned date',
+    'planning.add.repeatDate': 'Repeat by (optional)',
+    'planning.add.detail': 'Detail',
+    'planning.add.detailPlaceholder': 'e.g. Product or action',
+    'planning.status.planned': 'Planned',
+    'planning.status.done': 'Done',
+    'planning.status.cancelled': 'Cancelled',
+    'planning.markDone': 'Mark done',
+    'planning.type.injection': 'Injection',
+    'planning.type.shearing': 'Shearing',
+    'planning.type.custom': 'Custom',
+    'planning.product': 'Product: {product}',
+    'history.planning.created': 'Planning added: {type} on {date}',
+    'history.planning.completed': 'Planning done: {type} on {date}',
+    'planning.lastDate': 'Last injection: {date}',
+    'history.repeatBy': 'Repeat by {date}',
     'billing.fields': 'Fields',
     'billing.zones': 'Zones',
     'billing.sheep': 'Sheep',
+    'billing.users': 'Users',
+    'billing.sheep.active': 'Active sheep',
+    'billing.sheep.inactive': 'Inactive sheep',
     'billing.rateMonthly': '{price} / month',
     'billing.unlimited': 'Unlimited',
     'billing.included': 'Included',
@@ -373,6 +494,22 @@ const translations = {
     'sheep.location.unknownZone': 'Unknown zone',
     'sheep.location.none': 'No zone',
     'sheep.empty': 'No sheep',
+    'sheep.active.title': 'In flock',
+    'sheep.out.title': 'Out of flock',
+    'sheep.out.empty': 'No sheep out of flock.',
+    'sheep.out.showAll': 'Show all',
+    'sheep.out.hide': 'Hide',
+    'sheep.out.show': 'Show',
+    'sheep.out.hiddenBadge': 'Hidden',
+    'sheep.out.modal.title': 'Move out of flock',
+    'sheep.out.modal.reason': 'Reason',
+    'sheep.out.modal.date': 'Date',
+    'sheep.out.modal.notes': 'Notes (optional)',
+    'sheep.out.modal.notesPlaceholder': 'Extra info',
+    'sheep.out.reason.slaughter': 'Slaughtered',
+    'sheep.out.reason.deceased': 'Deceased',
+    'sheep.out.reason.sold': 'Sold',
+    'history.sheep.removedFromFlock': '{tag} moved out of flock ({reason}) on {date}',
     'select.paddock.first': 'Choose a paddock first',
     'select.paddock.choose': 'Choose paddock',
     'select.zone.choose': 'Choose zone',
@@ -418,6 +555,8 @@ const translations = {
     'aria.registerSheepInjection': 'Register injection for {tag}',
     'aria.registerSheepShearing': 'Register shearing for {tag}',
     'aria.moveSheep': 'Move {tag}',
+    'aria.moveSheepOut': 'Move {tag} out of flock',
+    'aria.toggleOutVisibility': 'Toggle visibility for {tag}',
     'aria.weatherForecast': 'Weather forecast',
     'paddock.add.title': 'Add paddock',
     'paddock.nameLabel': 'Paddock name',
@@ -533,6 +672,9 @@ const translationsFr = {
   'ui.save': 'Enregistrer',
   'ui.upload': 'Importer',
   'ui.clear': 'Effacer',
+  'ui.exitDownload.label': 'Telechargement auto a la fermeture',
+  'ui.exitDownload.on': 'Active',
+  'ui.exitDownload.off': 'Desactive',
   'onboarding.empty.title': 'Commencez la gestion de votre troupeau',
   'onboarding.empty.description': 'Aucune configuration enregistrée n\'a encore été trouvée. Choisissez comment démarrer.',
   'onboarding.empty.startZero': 'Start from Zero',
@@ -543,11 +685,15 @@ const translationsFr = {
   'tab.paddocksZones': 'Pâturages et zones',
   'tab.sheep': 'Moutons',
   'tab.history': 'Historique',
+  'tab.pedigree': 'Pedigree',
   'tab.billing': 'Facturation',
   'section.billing': 'Facturation',
   'billing.fields': 'Pâturages',
   'billing.zones': 'Zones',
   'billing.sheep': 'Moutons',
+  'billing.users': 'Utilisateurs',
+  'billing.sheep.active': 'Moutons actifs',
+  'billing.sheep.inactive': 'Moutons inactifs',
   'billing.rateMonthly': '{price} / mois',
   'billing.unlimited': 'Illimité',
   'billing.included': 'Inclus',
@@ -561,7 +707,49 @@ const translationsFr = {
   'section.paddocks': 'Pâturages',
   'section.sheep': 'Moutons',
   'section.history': 'Historique',
+  'section.planning': 'Planning',
+  'section.pedigree': 'Pedigree',
+  'pedigree.empty': 'Aucune donnee de pedigree disponible.',
+  'pedigree.mother': 'Mere',
+  'pedigree.father': 'Pere',
+  'pedigree.grandparents': 'Grands-parents',
   'sheep.add.title': 'Ajouter un mouton',
+  'planning.filter.period': 'Periode',
+  'planning.filter.paddock': 'Paturage',
+  'planning.filter.sheep': 'Mouton',
+  'planning.filter.period.30': '30 prochains jours',
+  'planning.filter.period.90': '90 prochains jours',
+  'planning.filter.period.all': 'Tout le futur',
+  'planning.filter.all': 'Tous',
+  'planning.empty': 'Aucune repetition planifiee trouvee.',
+  'planning.add': 'Ajouter planning',
+  'planning.add.title': 'Ajouter un element planning',
+  'planning.add.type': 'Type',
+  'planning.add.type.injection': 'Injection',
+  'planning.add.type.shearing': 'Tonte',
+  'planning.add.type.custom': 'Personnalise',
+  'planning.add.sheep': 'Moutons (optionnel)',
+  'planning.add.paddock': 'Paturage (optionnel)',
+  'planning.add.zone': 'Zone (optionnel)',
+  'planning.add.selectAll': 'Tout selectionner',
+  'planning.add.selectAllPaddocks': 'Tout selectionner paturages',
+  'planning.add.selectAllZones': 'Tout selectionner zones',
+  'planning.add.date': 'Date planifiee',
+  'planning.add.repeatDate': 'Repeater avant (optionnel)',
+  'planning.add.detail': 'Detail',
+  'planning.add.detailPlaceholder': 'ex. Produit ou action',
+  'planning.status.planned': 'Planifie',
+  'planning.status.done': 'Fait',
+  'planning.status.cancelled': 'Annule',
+  'planning.markDone': 'Marquer fait',
+  'planning.type.injection': 'Injection',
+  'planning.type.shearing': 'Tonte',
+  'planning.type.custom': 'Personnalise',
+  'planning.product': 'Produit : {product}',
+  'history.planning.created': 'Planning ajoute: {type} le {date}',
+  'history.planning.completed': 'Planning termine: {type} le {date}',
+  'planning.lastDate': 'Derniere injection : {date}',
+  'history.repeatBy': 'Repeater avant {date}',
   'sheep.add.earmarkPlaceholder': 'Marque auriculaire (optionnel)',
   'sheep.birthDateLabel': 'Date de naissance',
   'sheep.genderLabel': 'Sexe',
@@ -599,6 +787,22 @@ const translationsFr = {
   'sheep.location.unknownZone': 'Zone inconnue',
   'sheep.location.none': 'Aucune zone',
   'sheep.empty': 'Aucun mouton',
+  'sheep.active.title': 'Dans le troupeau',
+  'sheep.out.title': 'Hors du troupeau',
+  'sheep.out.empty': 'Aucun mouton hors du troupeau.',
+  'sheep.out.showAll': 'Tout afficher',
+  'sheep.out.hide': 'Masquer',
+  'sheep.out.show': 'Afficher',
+  'sheep.out.hiddenBadge': 'Masque',
+  'sheep.out.modal.title': 'Sortir du troupeau',
+  'sheep.out.modal.reason': 'Raison',
+  'sheep.out.modal.date': 'Date',
+  'sheep.out.modal.notes': 'Remarques (optionnel)',
+  'sheep.out.modal.notesPlaceholder': 'Infos supplementaires',
+  'sheep.out.reason.slaughter': 'Abattu',
+  'sheep.out.reason.deceased': 'Decede',
+  'sheep.out.reason.sold': 'Vendu',
+  'history.sheep.removedFromFlock': '{tag} hors du troupeau ({reason}) le {date}',
   'select.paddock.first': 'Choisissez d\'abord un pâturage',
   'select.paddock.choose': 'Choisir un pâturage',
   'select.zone.choose': 'Choisir une zone',
@@ -644,6 +848,8 @@ const translationsFr = {
   'aria.registerSheepInjection': 'Enregistrer une injection pour {tag}',
   'aria.registerSheepShearing': 'Enregistrer la tonte pour {tag}',
   'aria.moveSheep': 'Déplacer {tag}',
+  'aria.moveSheepOut': 'Sortir {tag} du troupeau',
+  'aria.toggleOutVisibility': 'Changer la visibilité de {tag}',
   'aria.weatherForecast': 'Prévisions météo',
   'paddock.add.title': 'Ajouter un pâturage',
   'paddock.nameLabel': 'Nom du pâturage',
@@ -869,6 +1075,41 @@ function setLanguage(lang){
   render()
 }
 
+function isAutoDownloadOnCloseEnabled(){
+  try {
+    return localStorage.getItem(EXIT_DOWNLOAD_KEY) === 'on'
+  } catch (error) {
+    return false
+  }
+}
+
+function setAutoDownloadOnClose(enabled){
+  const toggleButton = document.getElementById('exit-download-toggle-btn')
+  if(toggleButton){
+    toggleButton.setAttribute('aria-pressed', enabled ? 'true' : 'false')
+  }
+  const stateLabel = document.getElementById('exit-download-toggle-state')
+  if(stateLabel){
+    stateLabel.textContent = enabled ? t('ui.exitDownload.on') : t('ui.exitDownload.off')
+  }
+  try {
+    localStorage.setItem(EXIT_DOWNLOAD_KEY, enabled ? 'on' : 'off')
+  } catch (error) {
+    console.warn('Could not save auto download preference to localStorage')
+  }
+}
+
+function initAutoDownloadOnCloseToggle(){
+  const toggleButton = document.getElementById('exit-download-toggle-btn')
+  if(!toggleButton) return
+
+  setAutoDownloadOnClose(isAutoDownloadOnCloseEnabled())
+
+  toggleButton.addEventListener('click', () => {
+    setAutoDownloadOnClose(!isAutoDownloadOnCloseEnabled())
+  })
+}
+
 function recycleBinIcon(){
   return '<svg class="button-icon button-icon--delete" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 3a1 1 0 0 0-1 1v1H4.75a.75.75 0 0 0 0 1.5h.84l.82 10.31A2.25 2.25 0 0 0 8.64 19.5h6.72a2.25 2.25 0 0 0 2.23-1.69l.82-10.31h.84a.75.75 0 0 0 0-1.5H16V4a1 1 0 0 0-1-1H9zm1 2h4v0.5h-4V5zm-1.83 3.5a.75.75 0 0 1 .75.75v6.5a.75.75 0 0 1-1.5 0v-6.5a.75.75 0 0 1 .75-.75zm3.33 0a.75.75 0 0 1 .75.75v6.5a.75.75 0 0 1-1.5 0v-6.5a.75.75 0 0 1 .75-.75zm3.33 0a.75.75 0 0 1 .75.75v6.5a.75.75 0 0 1-1.5 0v-6.5a.75.75 0 0 1 .75-.75z"/></svg>'
 }
@@ -889,6 +1130,37 @@ function repeatIcon(iconClass = 'button-icon'){
   return `<img src="repeat.png" class="${iconClass}" alt="Repeat" />`
 }
 
+function isOutOfFlockSheep(sheep){
+  return sheep && sheep.flockStatus === 'out'
+}
+
+function isActiveFlockSheep(sheep){
+  return sheep && sheep.flockStatus !== 'out'
+}
+
+function outReasonLabel(reason){
+  if(reason === 'slaughter') return t('sheep.out.reason.slaughter')
+  if(reason === 'deceased') return t('sheep.out.reason.deceased')
+  if(reason === 'sold') return t('sheep.out.reason.sold')
+  return '-'
+}
+
+function outReasonIcon(reason){
+  if(reason === 'slaughter') return '🔪'
+  if(reason === 'deceased') return '✝'
+  if(reason === 'sold') return '💰'
+  return '•'
+}
+
+function escapeHtml(value){
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 function doubleArrowIcon(){
   return '<svg class="button-icon button-icon--move" viewBox="0 0 1920 1920" aria-hidden="true" focusable="false" preserveAspectRatio="xMidYMid meet"><g transform="translate(0,1920) scale(0.1,-0.1)"><path fill="currentColor" d="M12770 12920 c-19 -5 -45 -20 -57 -35 l-23 -26 0 -412 0 -412 -753 0 c-898 0 -844 6 -1231 -135 -71 -26 -157 -69 -209 -104 -21 -14 -42 -26 -47 -26 -6 0 -10 -4 -10 -10 0 -5 -5 -10 -10 -10 -12 0 -113 -77 -204 -155 -53 -44 -320 -331 -522 -559 -40 -45 -81 -88 -93 -96 -12 -8 -21 -18 -21 -23 0 -5 -19 -28 -42 -51 -24 -23 -62 -64 -86 -91 -24 -28 -81 -90 -128 -140 -46 -49 -461 -506 -921 -1015 -517 -570 -872 -954 -928 -1002 -238 -206 -534 -364 -845 -452 -269 -76 -289 -78 -1025 -85 l-660 -7 -64 -28 c-122 -53 -197 -120 -251 -226 -43 -86 -60 -155 -60 -251 0 -204 108 -380 285 -464 39 -18 77 -34 85 -35 8 -1 287 -5 620 -7 838 -6 1000 7 1352 107 79 22 152 45 163 50 18 9 56 23 250 95 86 31 183 82 358 186 270 162 439 293 643 501 72 73 542 588 1045 1143 502 556 935 1032 961 1059 26 27 48 51 48 55 0 3 20 26 44 51 141 145 175 181 216 230 48 58 68 79 224 238 84 85 112 107 191 146 166 84 175 85 953 88 l672 3 0 -408 c0 -261 4 -415 10 -428 17 -30 64 -49 126 -49 47 0 66 5 98 27 23 16 43 31 46 34 6 7 230 184 480 379 95 74 243 191 329 260 86 69 167 133 181 142 14 9 37 27 52 40 14 13 37 32 49 43 36 31 322 256 447 351 102 79 112 89 112 119 0 29 -11 41 -127 132 -263 205 -418 327 -429 337 -22 22 -100 86 -131 108 -18 13 -106 81 -195 152 -535 426 -811 640 -848 658 -37 19 -64 21 -120 8z"/><path fill="currentColor" d="M5009 12135 c-3 -2 -21 -5 -40 -6 -18 -1 -65 -17 -104 -35 -260 -122 -362 -445 -225 -714 54 -106 129 -173 251 -226 l64 -28 655 -6 c622 -6 662 -7 785 -29 405 -71 777 -243 1075 -496 79 -67 116 -105 259 -259 l54 -58 66 73 c36 40 89 97 116 126 28 28 63 67 79 85 16 18 62 69 103 113 41 44 93 101 116 126 23 25 80 87 127 138 47 51 87 97 89 102 5 17 -266 284 -389 383 -148 120 -211 163 -397 275 -175 104 -272 155 -358 186 -194 72 -232 86 -250 95 -38 19 -306 91 -408 111 -104 19 -121 21 -332 39 -118 10 -1327 15 -1336 5z"/><path fill="currentColor" d="M12738 9054 c-15 -8 -32 -23 -38 -34 -6 -12 -10 -167 -10 -427 l0 -408 -672 3 c-778 3 -787 4 -953 88 -79 39 -107 61 -191 146 -156 159 -176 180 -224 238 -25 29 -72 82 -105 115 -33 34 -77 81 -98 103 -20 23 -39 42 -41 42 -2 0 -102 -108 -221 -240 -119 -132 -221 -240 -225 -240 -4 0 -11 -9 -16 -19 -5 -11 -54 -68 -108 -126 -145 -154 -140 -129 -43 -232 45 -48 148 -160 229 -248 80 -89 172 -183 204 -211 91 -77 192 -154 204 -154 5 0 10 -4 10 -10 0 -5 4 -10 10 -10 5 0 26 -12 47 -26 52 -35 138 -78 209 -104 173 -63 270 -93 369 -113 108 -22 123 -22 862 -22 l753 0 0 -413 0 -414 28 -28 c36 -35 113 -48 163 -27 35 15 275 200 857 663 89 71 177 139 195 152 31 22 109 86 131 108 11 10 166 132 429 337 116 91 127 103 127 132 0 30 -10 40 -112 119 -125 95 -411 320 -447 351 -12 11 -35 30 -49 43 -15 13 -38 31 -52 40 -14 9 -81 62 -150 118 -69 55 -154 123 -190 151 -120 92 -645 506 -650 512 -3 3 -23 18 -46 34 -33 22 -51 27 -100 27 -32 -1 -71 -7 -86 -16z"/></g></svg>'
 }
@@ -906,6 +1178,60 @@ function openDeleteConfirm(kind, details = {}){
   openModal('delete-confirm-modal')
 }
 
+function openSheepOutOfFlockModal(sheepId){
+  const sheep = state.sheep.find(s => s.id === sheepId)
+  if(!sheep || isOutOfFlockSheep(sheep)) return
+  pendingOutOfFlockSheepId = sheepId
+
+  const sheepNameEl = document.getElementById('sheep-out-modal-sheep-name')
+  const reasonInput = document.getElementById('sheep-out-modal-reason')
+  const dateInput = document.getElementById('sheep-out-modal-date')
+  const notesInput = document.getElementById('sheep-out-modal-notes')
+  if(sheepNameEl) sheepNameEl.textContent = sheep.tag
+  if(reasonInput) reasonInput.value = 'sold'
+  if(dateInput) dateInput.value = todayIso()
+  if(notesInput) notesInput.value = ''
+
+  openModal('sheep-out-modal')
+}
+
+function closeSheepOutOfFlockModal(){
+  pendingOutOfFlockSheepId = null
+  closeModal('sheep-out-modal')
+}
+
+function moveSheepOutOfFlock(reason, date, notes = ''){
+  if(!pendingOutOfFlockSheepId) return
+  const sheep = state.sheep.find(s => s.id === pendingOutOfFlockSheepId)
+  if(!sheep || isOutOfFlockSheep(sheep)) return
+
+  const fromPaddockId = sheep.paddockId || null
+  const fromZoneId = sheep.zoneId || null
+  const normalizedNotes = typeof notes === 'string' && notes.trim() ? notes.trim() : null
+  sheep.flockStatus = 'out'
+  sheep.outReason = reason
+  sheep.outDate = date
+  sheep.outNotes = normalizedNotes
+  sheep.outHidden = false
+  sheep.outFromPaddockId = fromPaddockId
+  sheep.outFromZoneId = fromZoneId
+  sheep.paddockId = null
+  sheep.zoneId = null
+  sheep.lastUpdated = Date.now()
+
+  addEvent('SHEEP_REMOVED_FROM_FLOCK', {
+    sheepId: sheep.id,
+    tag: sheep.tag,
+    reason,
+    date,
+    notes: normalizedNotes,
+    fromPaddockId,
+    fromZoneId
+  })
+
+  save(); render(); closeSheepOutOfFlockModal()
+}
+
 function closeDeleteConfirmModal(){
   pendingDeleteConfirm = null
   closeModal('delete-confirm-modal')
@@ -919,16 +1245,7 @@ function executeDeleteConfirmed(){
   if(kind === 'sheep'){
     const sheepId = details.sheepId
     if(!sheepId) return
-    const sheep = state.sheep.find(s => s.id === sheepId)
-    state.sheep = state.sheep.filter(s => s.id !== sheepId)
-    state.sheep.forEach(s => {
-      if(s.motherId === sheepId) s.motherId = null
-      if(s.fatherId === sheepId) s.fatherId = null
-    })
-    if(sheep){
-      addHistory(t('entity.sheep'), t('history.sheep.deleted', { tag: sheep.tag, location: `${paddockName(sheep.paddockId)}${sheep.zoneId ? ' / ' + zoneName(sheep.paddockId, sheep.zoneId) : ''}` }))
-    }
-    save(); render()
+    openSheepOutOfFlockModal(sheepId)
     return
   }
 
@@ -938,13 +1255,17 @@ function executeDeleteConfirmed(){
     const paddock = getPaddock(paddockId)
     const zone = getZone(paddockId, zoneId)
     if(!paddock || !zone) return
-    const sheepInZone = state.sheep.filter(s => s.paddockId === paddockId && s.zoneId === zoneId)
+    const sheepInZone = state.sheep.filter(s => isActiveFlockSheep(s) && s.paddockId === paddockId && s.zoneId === zoneId)
     if(sheepInZone.length){
       openZoneDeleteMoveModal(paddockId, zoneId, sheepInZone.length)
       return
     }
     paddock.zones = paddock.zones.filter(z => z.id !== zoneId)
-    addHistory('zone', t('history.zone.deleted', { paddock: paddock.name, name: zone.name }))
+    addEvent('ZONE_DELETED', {
+      zoneId,
+      paddockId,
+      name: zone.name
+    })
     save(); render()
     return
   }
@@ -953,7 +1274,7 @@ function executeDeleteConfirmed(){
     const paddockId = details.paddockId
     const paddock = getPaddock(paddockId)
     if(!paddock) return
-    const sheepInPaddock = state.sheep.filter(s => s.paddockId === paddockId)
+    const sheepInPaddock = state.sheep.filter(s => isActiveFlockSheep(s) && s.paddockId === paddockId)
     if(sheepInPaddock.length){
       openPaddockDeleteMoveModal(paddockId, sheepInPaddock.length)
       return
@@ -961,7 +1282,10 @@ function executeDeleteConfirmed(){
     state.paddocks = state.paddocks.filter(p => p.id !== paddockId)
     collapsedPaddockIds.delete(paddockId)
     expandedWeatherPaddocks.delete(paddockId)
-    addHistory('weide', t('history.paddock.deleted', { name: paddock.name }))
+    addEvent('PADDOCK_DELETED', {
+      paddockId,
+      name: paddock.name
+    })
     save(); render()
   }
 }
@@ -991,6 +1315,8 @@ function applyStaticTranslations(){
   setText('download-data-btn', t('ui.save'))
   setText('upload-data-btn', t('ui.upload'))
   setText('clear-data-btn', t('ui.clear'))
+  setText('exit-download-toggle-label', t('ui.exitDownload.label'))
+  setAutoDownloadOnClose(isAutoDownloadOnCloseEnabled())
   setText('empty-storage-modal-title', t('onboarding.empty.title'))
   setText('empty-storage-modal-description', t('onboarding.empty.description'))
   setText('empty-storage-start-zero', t('onboarding.empty.startZero'))
@@ -999,11 +1325,37 @@ function applyStaticTranslations(){
   setText('tab-paddocks-btn', t('tab.paddocksZones'))
   setText('tab-sheep-btn', t('tab.sheep'))
   setText('tab-history-btn', t('tab.history'))
+  setText('tab-pedigree-btn', t('tab.pedigree'))
   setText('tab-billing-btn', t('tab.billing'))
   setText('section-paddocks-title', t('section.paddocks'))
   setText('section-sheep-title', t('section.sheep'))
   setText('section-history-title', t('section.history'))
+  setText('section-planning-title', t('section.planning'))
+  setText('section-pedigree-title', t('section.pedigree'))
   setText('section-billing-title', t('section.billing'))
+  setText('planning-filter-period-label', t('planning.filter.period'))
+  setText('planning-filter-paddock-label', t('planning.filter.paddock'))
+  setText('planning-filter-sheep-label', t('planning.filter.sheep'))
+  setText('planning-filter-period-option-30', t('planning.filter.period.30'))
+  setText('planning-filter-period-option-90', t('planning.filter.period.90'))
+  setText('planning-filter-period-option-all', t('planning.filter.period.all'))
+  setText('planning-add-btn', t('planning.add'))
+  setText('planning-item-modal-title', t('planning.add.title'))
+  setText('planning-item-type-label', t('planning.add.type'))
+  setText('planning-item-type-option-injection', t('planning.add.type.injection'))
+  setText('planning-item-type-option-shearing', t('planning.add.type.shearing'))
+  setText('planning-item-type-option-custom', t('planning.add.type.custom'))
+  setText('planning-item-sheep-label', t('planning.add.sheep'))
+  setText('planning-item-paddock-label', t('planning.add.paddock'))
+  setText('planning-item-zone-label', t('planning.add.zone'))
+  setText('planning-item-select-all-btn', t('planning.add.selectAll'))
+  setText('planning-item-select-all-paddocks-btn', t('planning.add.selectAllPaddocks'))
+  setText('planning-item-select-all-zones-btn', t('planning.add.selectAllZones'))
+  setText('planning-item-date-label', t('planning.add.date'))
+  setText('planning-item-repeat-date-label', t('planning.add.repeatDate'))
+  setText('planning-item-detail-label', t('planning.add.detail'))
+  setPlaceholder('planning-item-detail', t('planning.add.detailPlaceholder'))
+  setIconButton('planning-item-submit', t('ui.add'))
 
   setText('sheep-modal-title', t('sheep.add.title'))
   setPlaceholder('sheep-modal-tag', t('sheep.add.tagPlaceholder'))
@@ -1017,6 +1369,17 @@ function applyStaticTranslations(){
   setText('sheep-modal-notes-label', t('sheep.notes.label'))
   setPlaceholder('sheep-modal-notes', t('sheep.notes.placeholder'))
   setIconButton('sheep-modal-submit', t('sheep.add.submit'))
+
+  setText('sheep-out-modal-title', t('sheep.out.modal.title'))
+  setText('sheep-out-modal-sheep-label', t('injection.sheepLabel'))
+  setText('sheep-out-modal-reason-label', t('sheep.out.modal.reason'))
+  setText('sheep-out-modal-date-label', t('sheep.out.modal.date'))
+  setText('sheep-out-modal-notes-label', t('sheep.out.modal.notes'))
+  setPlaceholder('sheep-out-modal-notes', t('sheep.out.modal.notesPlaceholder'))
+  setText('sheep-out-reason-option-slaughter', t('sheep.out.reason.slaughter'))
+  setText('sheep-out-reason-option-deceased', t('sheep.out.reason.deceased'))
+  setText('sheep-out-reason-option-sold', t('sheep.out.reason.sold'))
+  setIconButton('sheep-out-modal-submit', t('ui.save'))
 
   setText('sheep-edit-modal-title', t('sheep.edit.title'))
   setPlaceholder('sheep-tag-edit-input', t('sheep.edit.tagPlaceholder'))
@@ -1164,9 +1527,12 @@ function initTabs(){
   const panels = {
     paddocks: document.getElementById('tab-paddocks-panel'),
     sheep: document.getElementById('tab-sheep-panel'),
-    history: document.getElementById('tab-history-panel')
+    history: document.getElementById('tab-history-panel'),
+    planning: document.getElementById('tab-planning-panel'),
+    pedigree: document.getElementById('tab-pedigree-panel'),
+    billing: document.getElementById('tab-billing-panel')
   }
-  if(!tabButtons.length || !panels.paddocks || !panels.sheep || !panels.history) return
+  if(!tabButtons.length || !panels.paddocks || !panels.sheep || !panels.history || !panels.planning || !panels.pedigree || !panels.billing) return
 
   const setActiveTab = (tab) => {
     const nextTab = panels[tab] ? tab : 'paddocks'
@@ -1185,6 +1551,16 @@ function initTabs(){
   tabButtons.forEach(btn => {
     btn.addEventListener('click', () => setActiveTab(btn.dataset.tab))
   })
+
+  const appTitle = document.getElementById('app-title')
+  if(appTitle){
+    appTitle.addEventListener('click', () => setActiveTab('billing'))
+    appTitle.addEventListener('keydown', (event) => {
+      if(event.key !== 'Enter' && event.key !== ' ') return
+      event.preventDefault()
+      setActiveTab('billing')
+    })
+  }
 
   setActiveTab('paddocks')
 }
@@ -1371,8 +1747,15 @@ function hydrateState(saved){
     gender: s.gender === 'male' || s.gender === 'female' ? s.gender : null,
     motherId: s.motherId ?? null,
     fatherId: s.fatherId ?? null,
-    paddockId: s.paddockId,
+    paddockId: s.paddockId ?? null,
     zoneId: s.zoneId ?? null,
+    flockStatus: s.flockStatus === 'out' ? 'out' : 'active',
+    outReason: typeof s.outReason === 'string' ? s.outReason : null,
+    outDate: typeof s.outDate === 'string' ? s.outDate : null,
+    outNotes: typeof s.outNotes === 'string' ? s.outNotes : null,
+    outHidden: !!s.outHidden,
+    outFromPaddockId: s.outFromPaddockId ?? null,
+    outFromZoneId: s.outFromZoneId ?? null,
     lastUpdated: s.lastUpdated ?? Date.now()
   })) : []
   state.history = Array.isArray(saved?.history) ? saved.history.map(h => ({
@@ -1381,6 +1764,36 @@ function hydrateState(saved){
     entity: h.entity || 'systeem',
     message: h.message || ''
   })) : []
+  state.events = Array.isArray(saved?.events) ? saved.events.map(event => ({
+    id: event.id || uid(),
+    ts: event.ts ?? Date.now(),
+    type: typeof event.type === 'string' ? event.type : 'UNKNOWN',
+    payload: event && typeof event.payload === 'object' && event.payload !== null ? event.payload : {}
+  })) : []
+  state.planningItems = Array.isArray(saved?.planningItems)
+    ? saved.planningItems.map(item => sanitizePlanningItem(item)).filter(Boolean)
+    : []
+  // Migrate legacy history snapshots into event entries when no events exist yet.
+  if(state.events.length === 0 && state.history.length){
+    const migrated = [...state.history]
+      .sort((a, b) => b.ts - a.ts)
+      .slice(0, 4000)
+      .map(item => ({
+        id: uid(),
+        ts: item.ts ?? Date.now(),
+        type: 'LEGACY_HISTORY_ENTRY',
+        payload: {
+          entity: item.entity || 'systeem',
+          message: item.message || ''
+        }
+      }))
+    state.events = migrated
+  }
+  migrateCareEventsFromSheepRecordsIfNeeded()
+  rebuildSheepCareFromEvents()
+  // Keep legacy history empty so events are the single source of truth.
+  state.history = []
+  syncDerivedPlanningItems()
   ensureDefaultStal()
   collapseAllPaddocks()
   const removedEarmarks = dedupeEarmarks()
@@ -1415,7 +1828,19 @@ function load(){
 
 function save(){
   updateZoneEmptyStates()
-  localStorage.setItem(KEY, JSON.stringify(state))
+  syncDerivedPlanningItems()
+  const sheepForStorage = state.sheep.map(sheep => ({
+    ...sheep,
+    injections: [],
+    shearings: []
+  }))
+  const persistedState = {
+    ...state,
+    history: [],
+    sheep: sheepForStorage,
+    planningItems: state.planningItems.filter(item => item && item.source === 'manual')
+  }
+  localStorage.setItem(KEY, JSON.stringify(persistedState))
 }
 
 function formatBirthDate(dateString){
@@ -1487,6 +1912,31 @@ function nextInjectionRecord(sheep){
   return valid.reduce((next, item) => (item.repeatDate <= next.repeatDate ? item : next))
 }
 
+function groupHistoryEntries(entries){
+  const grouped = []
+
+  entries.forEach(entry => {
+    const lastGroup = grouped[grouped.length - 1]
+    const metaKey = `${formatDateTime(entry.ts)}|${entry.what}|${entry.detail}|${entry.repeatBy || ''}`
+
+    if(lastGroup && lastGroup.metaKey === metaKey){
+      lastGroup.sheepNames = Array.from(new Set([...lastGroup.sheepNames, ...entry.sheepNames]))
+      return
+    }
+
+    grouped.push({
+      metaKey,
+      ts: entry.ts,
+      what: entry.what,
+      detail: entry.detail,
+      repeatBy: entry.repeatBy || '',
+      sheepNames: Array.isArray(entry.sheepNames) ? [...entry.sheepNames] : []
+    })
+  })
+
+  return grouped
+}
+
 function formatDate(timestamp){
   return new Date(timestamp).toLocaleDateString(localeTag(), { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
@@ -1533,16 +1983,162 @@ function dedupeEarmarks(){
   return removedCount
 }
 
-function addHistory(entity, message){
-  state.history.unshift({
+function addEvent(type, payload, ts = Date.now()){
+  state.events.unshift({
     id: uid(),
-    ts: Date.now(),
-    entity,
-    message
+    ts,
+    type,
+    payload
   })
-  if(state.history.length > 400){
-    state.history = state.history.slice(0, 400)
+  if(state.events.length > 4000){
+    state.events = state.events.slice(0, 4000)
   }
+}
+
+function generateHistoryFromEvents(){
+  const generated = []
+  const events = Array.isArray(state.events) ? [...state.events].sort((a, b) => b.ts - a.ts) : []
+
+  events.forEach(evt => {
+    const { type, ts, payload } = evt
+    if(!type || !payload) return
+
+    let what = 'systeem'
+    let detail = ''
+    let repeatBy = ''
+    let sheepNames = []
+
+    switch(type){
+      case 'SHEEP_CREATED':
+        what = t('entity.sheep')
+        detail = t('history.sheep.added', {
+          tag: payload.tag || '?',
+          location: payload.zoneId
+            ? `${paddockName(payload.paddockId)} / ${zoneName(payload.paddockId, payload.zoneId)}`
+            : paddockName(payload.paddockId)
+        })
+        sheepNames = [payload.tag || '?']
+        break
+      case 'SHEEP_DELETED':
+        what = t('entity.sheep')
+        detail = t('history.sheep.deleted', {
+          tag: payload.tag || '?',
+          location: payload.zoneId
+            ? `${paddockName(payload.paddockId)} / ${zoneName(payload.paddockId, payload.zoneId)}`
+            : paddockName(payload.paddockId)
+        })
+        sheepNames = [payload.tag || '?']
+        break
+      case 'SHEEP_REMOVED_FROM_FLOCK':
+        what = t('entity.sheep')
+        detail = t('history.sheep.removedFromFlock', {
+          tag: payload.tag || '?',
+          reason: outReasonLabel(payload.reason),
+          date: formatBirthDate(payload.date)
+        })
+        sheepNames = [payload.tag || '?']
+        break
+      case 'PADDOCK_CREATED':
+        what = 'weide'
+        detail = t('history.paddock.added', { name: payload.name || '?' })
+        break
+      case 'PADDOCK_DELETED':
+        what = 'weide'
+        detail = t('history.paddock.deleted', { name: payload.name || '?' })
+        break
+      case 'ZONE_CREATED':
+        what = 'zone'
+        detail = t('history.zone.added', {
+          name: payload.name || '?',
+          paddock: paddockName(payload.paddockId)
+        })
+        break
+      case 'ZONE_DELETED':
+        what = 'zone'
+        detail = t('history.zone.deleted', {
+          paddock: paddockName(payload.paddockId),
+          name: payload.name || '?'
+        })
+        break
+      case 'SHEEP_MOVED':
+        what = t('entity.sheep')
+        detail = `${payload.from || t('unknown')} → ${payload.to || t('unknown')}`
+        sheepNames = [payload.sheep || '?']
+        break
+      case 'SHEEP_INJECTION_REGISTERED':
+        what = 'injectie'
+        if(payload.repeatDate){
+          detail = `${payload.product || '?'} (${formatBirthDate(payload.date)})`
+          repeatBy = formatBirthDate(payload.repeatDate)
+        } else {
+          detail = `${payload.product || '?'} (${formatBirthDate(payload.date)})`
+        }
+        sheepNames = [payload.sheepTag || '?']
+        break
+      case 'SHEEP_SHEARING_REGISTERED':
+        what = 'scheren'
+        detail = formatBirthDate(payload.date)
+        sheepNames = [payload.sheepTag || '?']
+        break
+      case 'PADDOCK_UPDATED': {
+        what = 'weide'
+        const updates = []
+        if(payload.previousName !== payload.newName) updates.push(t('history.details.name', { from: payload.previousName, name: payload.newName }))
+        if(payload.previousPostcode !== payload.newPostcode) updates.push(t('history.details.postcode', { from: payload.previousPostcode || '-', postcode: payload.newPostcode || '-' }))
+        detail = updates.join(', ') || '-'
+        break
+      }
+      case 'ZONE_UPDATED': {
+        what = 'zone'
+        const updates = []
+        if(payload.previousName !== payload.newName) updates.push(t('history.details.name', { from: payload.previousName, name: payload.newName }))
+        if(payload.previousArea !== payload.newArea) updates.push(t('history.details.area', { from: payload.previousArea ?? '-', area: payload.newArea ?? '-' }))
+        if(payload.previousPerimeter !== payload.newPerimeter) updates.push(t('history.details.perimeter', { from: payload.previousPerimeter ?? '-', perimeter: payload.newPerimeter ?? '-' }))
+        if(payload.previousNotes !== payload.newNotes) updates.push(t('history.details.notesUpdated'))
+        detail = `${paddockName(payload.paddockId)} / ${payload.newName || '?'}`
+        repeatBy = updates.join(', ') || '-'
+        break
+      }
+      case 'SHEEP_UPDATED': {
+        what = t('entity.sheep')
+        const updates = []
+        if(payload.previousTag !== payload.newTag) updates.push(t('history.details.name', { from: payload.previousTag, to: payload.newTag }))
+        if(payload.previousEarmark !== payload.newEarmark) updates.push(t('history.details.earmarkAdded', { earmark: payload.newEarmark }))
+        detail = updates.join(', ') || '-'
+        break
+      }
+      case 'DATA_IMPORTED':
+        what = 'systeem'
+        detail = t('history.import.success')
+        break
+      case 'LEGACY_HISTORY_ENTRY':
+        what = payload.entity || 'systeem'
+        detail = payload.message || ''
+        break
+      case 'PLANNING_ITEM_CREATED':
+        what = 'planning'
+        detail = t('history.planning.created', {
+          type: t(`planning.type.${payload.type || 'custom'}`),
+          date: formatBirthDate(payload.dueDate)
+        })
+        sheepNames = payload.sheepTag ? [payload.sheepTag] : []
+        break
+      case 'PLANNING_ITEM_COMPLETED':
+        what = 'planning'
+        detail = t('history.planning.completed', {
+          type: t(`planning.type.${payload.type || 'custom'}`),
+          date: formatBirthDate(payload.dueDate)
+        })
+        sheepNames = payload.sheepTag ? [payload.sheepTag] : []
+        break
+      default:
+        return
+    }
+
+    generated.push({ id: evt.id, ts, what, detail, repeatBy, sheepNames })
+  })
+
+  return generated
 }
 
 function sheepNamesList(sheepItems){
@@ -1550,16 +2146,27 @@ function sheepNamesList(sheepItems){
 }
 
 function exportData(){
+  syncDerivedPlanningItems()
+  const sheepForStorage = state.sheep.map(sheep => ({
+    ...sheep,
+    injections: [],
+    shearings: []
+  }))
   const exportState = {
     ...state,
-    history: Array.isArray(state.history) ? state.history.slice(0, 100) : []
+    history: [],
+    sheep: sheepForStorage,
+    planningItems: state.planningItems.filter(item => item && item.source === 'manual')
   }
   const json = JSON.stringify(exportState, null, 2)
   const blob = new Blob([json], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
-  link.download = `flockops-${new Date().toISOString().slice(0,10)}.json`
+  const now = new Date()
+  const date = now.toISOString().slice(0, 10)
+  const time = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`
+  link.download = `flockops-${date}-${time}.json`
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
@@ -1567,6 +2174,7 @@ function exportData(){
 }
 
 function handleExitDownload(){
+  if(!isAutoDownloadOnCloseEnabled()) return
   if(hasTriggeredExitDownload) return
   hasTriggeredExitDownload = true
   try {
@@ -1577,6 +2185,113 @@ function handleExitDownload(){
   }
 }
 
+function parseCareDateToTimestamp(dateString, fallbackTs = Date.now()){
+  if(typeof dateString !== 'string' || !dateString.trim()) return fallbackTs
+  const parsed = new Date(`${dateString.trim()}T12:00:00`).getTime()
+  return Number.isFinite(parsed) ? parsed : fallbackTs
+}
+
+function hasCareEvents(){
+  return state.events.some(evt => evt.type === 'SHEEP_INJECTION_REGISTERED' || evt.type === 'SHEEP_SHEARING_REGISTERED')
+}
+
+function migrateCareEventsFromSheepRecordsIfNeeded(){
+  const existingKeys = new Set(
+    state.events
+      .filter(evt => evt.type === 'SHEEP_INJECTION_REGISTERED' || evt.type === 'SHEEP_SHEARING_REGISTERED')
+      .map(evt => {
+        const payload = evt.payload && typeof evt.payload === 'object' ? evt.payload : {}
+        if(evt.type === 'SHEEP_INJECTION_REGISTERED'){
+          const repeatDate = typeof payload.repeatDate === 'string' ? payload.repeatDate.trim() : ''
+          return `inj|${payload.sheepId || ''}|${payload.date || ''}|${payload.product || ''}|${repeatDate}`
+        }
+        return `shr|${payload.sheepId || ''}|${payload.date || ''}`
+      })
+  )
+
+  const migratedEvents = []
+  state.sheep.forEach(sheep => {
+    const injections = Array.isArray(sheep.injections) ? sheep.injections : []
+    injections.forEach(injection => {
+      const repeatDate = typeof injection.repeatDate === 'string' && injection.repeatDate.trim() ? injection.repeatDate.trim() : ''
+      const dedupeKey = `inj|${sheep.id}|${typeof injection.date === 'string' ? injection.date : ''}|${typeof injection.product === 'string' ? injection.product : ''}|${repeatDate}`
+      if(existingKeys.has(dedupeKey)) return
+      existingKeys.add(dedupeKey)
+      const ts = parseCareDateToTimestamp(injection.date, sheep.lastUpdated ?? Date.now())
+      migratedEvents.push({
+        id: uid(),
+        ts,
+        type: 'SHEEP_INJECTION_REGISTERED',
+        payload: {
+          paddockId: sheep.paddockId,
+          zoneId: sheep.zoneId || null,
+          sheepId: sheep.id,
+          sheepTag: sheep.tag,
+          date: typeof injection.date === 'string' ? injection.date : '',
+          product: typeof injection.product === 'string' ? injection.product : '',
+          repeatDate: repeatDate || null
+        }
+      })
+    })
+
+    const shearings = Array.isArray(sheep.shearings) ? sheep.shearings : []
+    shearings.forEach(shearing => {
+      const dedupeKey = `shr|${sheep.id}|${typeof shearing.date === 'string' ? shearing.date : ''}`
+      if(existingKeys.has(dedupeKey)) return
+      existingKeys.add(dedupeKey)
+      const ts = parseCareDateToTimestamp(shearing.date, sheep.lastUpdated ?? Date.now())
+      migratedEvents.push({
+        id: uid(),
+        ts,
+        type: 'SHEEP_SHEARING_REGISTERED',
+        payload: {
+          paddockId: sheep.paddockId,
+          zoneId: sheep.zoneId || null,
+          sheepId: sheep.id,
+          sheepTag: sheep.tag,
+          date: typeof shearing.date === 'string' ? shearing.date : ''
+        }
+      })
+    })
+  })
+
+  if(!migratedEvents.length) return
+  state.events = [...state.events, ...migratedEvents]
+}
+
+function rebuildSheepCareFromEvents(){
+  state.sheep.forEach(sheep => {
+    sheep.injections = []
+    sheep.shearings = []
+  })
+
+  const careEvents = state.events
+    .filter(evt => evt.type === 'SHEEP_INJECTION_REGISTERED' || evt.type === 'SHEEP_SHEARING_REGISTERED')
+    .slice()
+    .sort((a, b) => (a.ts ?? 0) - (b.ts ?? 0))
+
+  careEvents.forEach(evt => {
+    const payload = evt.payload && typeof evt.payload === 'object' ? evt.payload : {}
+    const sheep = state.sheep.find(item => item.id === payload.sheepId)
+    if(!sheep) return
+
+    if(evt.type === 'SHEEP_INJECTION_REGISTERED'){
+      sheep.injections.push({
+        id: uid(),
+        date: typeof payload.date === 'string' ? payload.date : '',
+        product: typeof payload.product === 'string' ? payload.product : '',
+        repeatDate: typeof payload.repeatDate === 'string' ? payload.repeatDate : ''
+      })
+      return
+    }
+
+    sheep.shearings.push({
+      id: uid(),
+      date: typeof payload.date === 'string' ? payload.date : ''
+    })
+  })
+}
+
 function importDataFile(file){
   const reader = new FileReader()
   reader.onload = () => {
@@ -1584,10 +2299,9 @@ function importDataFile(file){
       const parsed = JSON.parse(reader.result)
       if(!parsed || typeof parsed !== 'object') throw new Error('Ongeldig bestand')
       const removedEarmarks = hydrateState(parsed)
+      addEvent('DATA_IMPORTED', { source: 'file' })
       if(removedEarmarks > 0){
-        addHistory('systeem', t('history.import.duplicates', { count: removedEarmarks }))
       }
-      addHistory('systeem', t('history.import.success'))
       reopenEmptyStorageModalAfterUpload = false
       save(); render()
       alert(t('alert.importSuccess'))
@@ -1624,10 +2338,9 @@ async function loadDummyData(){
     if(!parsed) throw lastError || new Error('Failed to fetch')
     if(!parsed || typeof parsed !== 'object') throw new Error('Ongeldig bestand')
     const removedEarmarks = hydrateState(parsed)
+    addEvent('DATA_IMPORTED', { source: 'dummy' })
     if(removedEarmarks > 0){
-      addHistory('systeem', t('history.import.duplicates', { count: removedEarmarks }))
     }
-    addHistory('systeem', t('history.import.success'))
     save(); render(); closeModal('empty-storage-modal')
     alert(t('alert.importSuccess'))
   } catch (error) {
@@ -1648,10 +2361,484 @@ function maybeOpenEmptyStorageModal(){
   }
 }
 
+function normalizePlanningType(value){
+  return value === 'injection' || value === 'shearing' || value === 'custom' ? value : 'custom'
+}
+
+function normalizePlanningStatus(value){
+  return value === 'planned' || value === 'done' || value === 'cancelled' ? value : 'planned'
+}
+
+function sanitizePlanningItem(item){
+  if(!item || typeof item !== 'object') return null
+  const dueDate = typeof item.dueDate === 'string' ? item.dueDate.trim() : ''
+  if(!dueDate) return null
+  return {
+    id: typeof item.id === 'string' && item.id.trim() ? item.id : uid(),
+    type: normalizePlanningType(item.type),
+    status: normalizePlanningStatus(item.status),
+    dueDate,
+    repeatDate: typeof item.repeatDate === 'string' ? item.repeatDate.trim() : '',
+    detail: typeof item.detail === 'string' ? item.detail.trim() : '',
+    sheepId: typeof item.sheepId === 'string' && item.sheepId.trim() ? item.sheepId : null,
+    paddockId: typeof item.paddockId === 'string' && item.paddockId.trim() ? item.paddockId : null,
+    zoneId: typeof item.zoneId === 'string' && item.zoneId.trim() ? item.zoneId : null,
+    source: item.source === 'derived' ? 'derived' : 'manual',
+    sourceKey: typeof item.sourceKey === 'string' && item.sourceKey.trim() ? item.sourceKey : null,
+    createdAt: Number.isFinite(Number(item.createdAt)) ? Number(item.createdAt) : Date.now(),
+    completedAt: Number.isFinite(Number(item.completedAt)) ? Number(item.completedAt) : null,
+    lastDate: typeof item.lastDate === 'string' ? item.lastDate.trim() : '',
+    product: typeof item.product === 'string' ? item.product.trim() : ''
+  }
+}
+
+function collectDerivedPlanningCandidates(){
+  const candidates = []
+  state.sheep.forEach(sheep => {
+    if(!isActiveFlockSheep(sheep)) return
+    if(!Array.isArray(sheep.injections)) return
+    sheep.injections.forEach(injection => {
+      if(typeof injection.repeatDate !== 'string' || !injection.repeatDate.trim()) return
+      candidates.push({
+        sourceKey: `inj:${sheep.id}:${injection.id || ''}`,
+        type: 'injection',
+        dueDate: injection.repeatDate.trim(),
+        repeatDate: injection.repeatDate.trim(),
+        detail: injection.product || '',
+        sheepId: sheep.id,
+        paddockId: sheep.paddockId,
+        zoneId: sheep.zoneId || null,
+        product: injection.product || '',
+        lastDate: injection.date || ''
+      })
+    })
+  })
+  return candidates
+}
+
+function syncDerivedPlanningItems(){
+  const candidates = collectDerivedPlanningCandidates()
+  const candidateByKey = new Map(candidates.map(item => [item.sourceKey, item]))
+  const nextItems = []
+  let hasChanges = false
+
+  state.planningItems.forEach(item => {
+    if(item.source !== 'derived' || !item.sourceKey){
+      nextItems.push(item)
+      return
+    }
+    const candidate = candidateByKey.get(item.sourceKey)
+    if(!candidate){
+      if(item.status === 'planned'){
+        hasChanges = true
+        return
+      }
+      nextItems.push(item)
+      return
+    }
+
+    const updated = {
+      ...item,
+      type: candidate.type,
+      dueDate: candidate.dueDate,
+      repeatDate: candidate.repeatDate,
+      detail: candidate.detail,
+      sheepId: candidate.sheepId,
+      paddockId: candidate.paddockId,
+      zoneId: candidate.zoneId,
+      product: candidate.product,
+      lastDate: candidate.lastDate
+    }
+    if(
+      item.type !== updated.type
+      || item.dueDate !== updated.dueDate
+      || item.repeatDate !== updated.repeatDate
+      || item.detail !== updated.detail
+      || item.sheepId !== updated.sheepId
+      || item.paddockId !== updated.paddockId
+      || item.zoneId !== updated.zoneId
+      || item.product !== updated.product
+      || item.lastDate !== updated.lastDate
+    ){
+      hasChanges = true
+    }
+
+    nextItems.push(updated)
+    candidateByKey.delete(item.sourceKey)
+  })
+
+  candidateByKey.forEach(candidate => {
+    nextItems.push({
+      id: uid(),
+      type: candidate.type,
+      status: 'planned',
+      dueDate: candidate.dueDate,
+      repeatDate: candidate.repeatDate,
+      detail: candidate.detail,
+      sheepId: candidate.sheepId,
+      paddockId: candidate.paddockId,
+      zoneId: candidate.zoneId,
+      source: 'derived',
+      sourceKey: candidate.sourceKey,
+      createdAt: Date.now(),
+      completedAt: null,
+      product: candidate.product,
+      lastDate: candidate.lastDate
+    })
+    hasChanges = true
+  })
+
+  if(hasChanges){
+    state.planningItems = nextItems
+  }
+
+  return hasChanges
+}
+
+function resolvePlanningItem(item){
+  const sheep = item.sheepId ? state.sheep.find(s => s.id === item.sheepId) : null
+  const paddockId = item.paddockId || (sheep ? sheep.paddockId : null)
+  const zoneId = item.zoneId || (!item.paddockId && sheep ? (sheep.zoneId || null) : null)
+  const paddock = paddockId ? getPaddock(paddockId) : null
+  const zone = paddockId && zoneId ? getZone(paddockId, zoneId) : null
+  return {
+    ...item,
+    sheepTag: sheep ? sheep.tag : '-',
+    paddockId,
+    zoneId,
+    location: paddockId
+      ? `${paddock ? paddock.name : t('unknown')}${zoneId ? ' / ' + (zone ? zone.name : t('unknown')) : ''}`
+      : '-',
+    typeLabel: t(`planning.type.${item.type}`)
+  }
+}
+
+function collectPlanningEntries(){
+  syncDerivedPlanningItems()
+  return state.planningItems
+    .map(item => resolvePlanningItem(item))
+    .sort((a, b) => {
+      if(a.dueDate === b.dueDate){
+        return (a.sheepTag || '').localeCompare(b.sheepTag || '', localeTag())
+      }
+      return a.dueDate.localeCompare(b.dueDate)
+    })
+}
+
+function planningDateField(item){
+  return item.dueDate || item.repeatDate || ''
+}
+
+function isWithinPeriod(dateValue, periodFilter){
+  if(!dateValue) return false
+  if(periodFilter === 'all') return true
+  const days = Number(periodFilter)
+  if(!Number.isFinite(days) || days <= 0) return true
+  const today = todayIso()
+  if(dateValue < today) return false
+  const cutoff = new Date(`${today}T12:00:00`)
+  cutoff.setDate(cutoff.getDate() + days)
+  const cutoffIso = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}-${String(cutoff.getDate()).padStart(2, '0')}`
+  return dateValue <= cutoffIso
+}
+
+function planningGroupKey(item){
+  const dateValue = planningDateField(item)
+  return dateValue ? dateValue.slice(0, 7) : 'zonder-datum'
+}
+
+function planningStatusLabel(status){
+  return t(`planning.status.${status}`)
+}
+
+function renderPlanningActions(item){
+  if(item.status !== 'planned' || item.source !== 'manual') return ''
+  return `<button type="button" class="planning-mark-done-button" data-planning-id="${item.id}">${t('planning.markDone')}</button>`
+}
+
+function renderPlanningDetails(item){
+  const lines = []
+  if(item.detail) lines.push(item.detail)
+  if(item.source === 'derived' && item.product) lines.push(t('planning.product', { product: item.product }))
+  if(item.source === 'derived' && item.lastDate) lines.push(t('planning.lastDate', { date: formatBirthDate(item.lastDate) }))
+  if(item.repeatDate) lines.push(t('history.repeatBy', { date: formatBirthDate(item.repeatDate) }))
+  return lines.join(' · ')
+}
+
+function markPlanningItemDone(planningId){
+  const item = state.planningItems.find(entry => entry.id === planningId)
+  if(!item || item.status !== 'planned') return
+  item.status = 'done'
+  item.completedAt = Date.now()
+  addEvent('PLANNING_ITEM_COMPLETED', {
+    planningId: item.id,
+    type: item.type,
+    dueDate: item.dueDate,
+    sheepTag: item.sheepId ? (state.sheep.find(s => s.id === item.sheepId)?.tag || null) : null
+  })
+  save(); render()
+}
+
+function openPlanningItemModal(){
+  const dueDateInput = document.getElementById('planning-item-date')
+  const repeatDateInput = document.getElementById('planning-item-repeat-date')
+  const typeInput = document.getElementById('planning-item-type')
+  const detailInput = document.getElementById('planning-item-detail')
+  const sheepList = document.getElementById('planning-item-sheep-list')
+  const paddockList = document.getElementById('planning-item-paddock-list')
+
+  if(typeInput) typeInput.value = 'custom'
+  if(dueDateInput) dueDateInput.value = todayIso()
+  if(repeatDateInput) repeatDateInput.value = ''
+  if(detailInput) detailInput.value = ''
+  if(sheepList){
+    sheepList.innerHTML = state.sheep
+      .slice()
+      .filter(isActiveFlockSheep)
+      .sort((a, b) => a.tag.localeCompare(b.tag, localeTag()))
+      .map(sheep => `
+        <label class="modal-sheep-option" for="planning-item-sheep-${sheep.id}">
+          <input id="planning-item-sheep-${sheep.id}" type="checkbox" name="planning-item-sheep" value="${sheep.id}">
+          <span>${sheep.tag}</span>
+        </label>
+      `)
+      .join('')
+  }
+  if(paddockList){
+    paddockList.innerHTML = state.paddocks
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name, localeTag()))
+      .map(paddock => `
+        <label class="modal-sheep-option" for="planning-item-paddock-${paddock.id}">
+          <input id="planning-item-paddock-${paddock.id}" type="checkbox" name="planning-item-paddock" value="${paddock.id}">
+          <span>${paddock.name}</span>
+        </label>
+      `)
+      .join('')
+  }
+  populatePlanningZoneOptions(null)
+  syncPlanningTypeVisibility()
+
+  pendingPlanningItemId = null
+  openModal('planning-item-modal')
+}
+
+function closePlanningItemModal(){
+  pendingPlanningItemId = null
+  closeModal('planning-item-modal')
+}
+
+function toggleAllPlanningSheepSelection(){
+  const checkboxes = Array.from(document.querySelectorAll('#planning-item-sheep-list input[name="planning-item-sheep"]'))
+  if(!checkboxes.length) return
+  const shouldSelectAll = checkboxes.some(checkbox => !checkbox.checked)
+  checkboxes.forEach(checkbox => {
+    checkbox.checked = shouldSelectAll
+  })
+}
+
+function toggleAllPlanningCheckboxSelection(name, containerSelector){
+  const checkboxes = Array.from(document.querySelectorAll(`${containerSelector} input[name="${name}"]`))
+  if(!checkboxes.length) return
+  const shouldSelectAll = checkboxes.some(checkbox => !checkbox.checked)
+  checkboxes.forEach(checkbox => {
+    checkbox.checked = shouldSelectAll
+  })
+}
+
+function clearPlanningCheckboxSelection(name){
+  const checkboxes = Array.from(document.querySelectorAll(`input[name="${name}"]`))
+  checkboxes.forEach(checkbox => {
+    checkbox.checked = false
+  })
+}
+
+function syncPlanningTypeVisibility(){
+  const typeInput = document.getElementById('planning-item-type')
+  const sheepField = document.getElementById('planning-item-sheep-field')
+  const paddockField = document.getElementById('planning-item-paddock-field')
+  const zoneField = document.getElementById('planning-item-zone-field')
+  const type = normalizePlanningType(typeInput ? typeInput.value : 'custom')
+
+  const showSheep = true
+  const showPaddock = type === 'custom'
+  const showZone = false
+
+  if(sheepField) sheepField.hidden = !showSheep
+  if(paddockField) paddockField.hidden = !showPaddock
+  if(zoneField) zoneField.hidden = !showZone
+
+  if(!showPaddock){
+    clearPlanningCheckboxSelection('planning-item-paddock')
+    clearPlanningCheckboxSelection('planning-item-zone')
+    populatePlanningZoneOptions(null)
+  }
+}
+
+function getSelectedPlanningPaddockIds(){
+  return Array.from(document.querySelectorAll('#planning-item-paddock-list input[name="planning-item-paddock"]:checked')).map(input => input.value)
+}
+
+function getSelectedPlanningZoneTargets(){
+  return Array.from(document.querySelectorAll('#planning-item-zone-list input[name="planning-item-zone"]:checked'))
+    .map(input => {
+      const [paddockId, zoneId] = String(input.value || '').split('::')
+      if(!paddockId || !zoneId) return null
+      return { paddockId, zoneId }
+    })
+    .filter(Boolean)
+}
+
+function populatePlanningZoneOptions(paddockIds){
+  const zoneList = document.getElementById('planning-item-zone-list')
+  if(!zoneList) return
+  const normalizedPaddockIds = Array.isArray(paddockIds) ? paddockIds.filter(Boolean) : []
+  if(!normalizedPaddockIds.length){
+    zoneList.innerHTML = `<div class="empty">${t('select.paddock.first')}</div>`
+    return
+  }
+
+  const zones = normalizedPaddockIds.flatMap(paddockId => {
+    const paddock = getPaddock(paddockId)
+    if(!paddock || !Array.isArray(paddock.zones)) return []
+    return paddock.zones.map(zone => ({
+      paddockId,
+      paddockName: paddock.name,
+      zoneId: zone.id,
+      zoneName: zone.name
+    }))
+  })
+
+  if(!zones.length){
+    zoneList.innerHTML = `<div class="empty">${t('select.zone.noneAvailable')}</div>`
+    return
+  }
+
+  zoneList.innerHTML = zones
+    .map(zone => `
+      <label class="modal-sheep-option" for="planning-item-zone-${zone.paddockId}-${zone.zoneId}">
+        <input id="planning-item-zone-${zone.paddockId}-${zone.zoneId}" type="checkbox" name="planning-item-zone" value="${zone.paddockId}::${zone.zoneId}">
+        <span>${zone.paddockName} / ${zone.zoneName}</span>
+      </label>
+    `)
+    .join('')
+}
+
+function filterPlanningEntries(entries){
+  const periodFilter = document.getElementById('planning-filter-period')?.value || 'all'
+  const paddockFilter = document.getElementById('planning-filter-paddock')?.value || 'all'
+  const sheepFilter = document.getElementById('planning-filter-sheep')?.value || 'all'
+
+  let filtered = [...entries]
+
+  if(periodFilter !== 'all'){
+    filtered = filtered.filter(item => isWithinPeriod(planningDateField(item), periodFilter))
+  }
+
+  if(paddockFilter !== 'all'){
+    filtered = filtered.filter(item => item.paddockId === paddockFilter)
+  }
+  if(sheepFilter !== 'all'){
+    filtered = filtered.filter(item => item.sheepId === sheepFilter)
+  }
+
+  return filtered
+}
+
+function syncPlanningFilterOptions(allEntries){
+  const paddockFilter = document.getElementById('planning-filter-paddock')
+  const sheepFilter = document.getElementById('planning-filter-sheep')
+  if(!paddockFilter || !sheepFilter) return
+
+  const selectedPaddock = paddockFilter.value || 'all'
+  const selectedSheep = sheepFilter.value || 'all'
+
+  const paddockIds = new Set(allEntries.map(item => item.paddockId).filter(Boolean))
+  const sheepIds = new Set(allEntries.map(item => item.sheepId).filter(Boolean))
+
+  const paddockOptions = state.paddocks
+    .filter(paddock => paddockIds.has(paddock.id))
+    .map(paddock => `<option value="${paddock.id}">${paddock.name}</option>`)
+    .join('')
+  paddockFilter.innerHTML = `<option value="all">${t('planning.filter.all')}</option>${paddockOptions}`
+  paddockFilter.value = paddockIds.has(selectedPaddock) ? selectedPaddock : 'all'
+
+  const sheepOptions = state.sheep
+    .filter(sheep => sheepIds.has(sheep.id))
+    .map(sheep => `<option value="${sheep.id}">${sheep.tag}</option>`)
+    .join('')
+  sheepFilter.innerHTML = `<option value="all">${t('planning.filter.all')}</option>${sheepOptions}`
+  sheepFilter.value = sheepIds.has(selectedSheep) ? selectedSheep : 'all'
+}
+
+function renderPlanning(){
+  const planningList = document.getElementById('planning-list')
+  if(!planningList) return
+
+  const allEntries = collectPlanningEntries()
+  syncPlanningFilterOptions(allEntries)
+  const filteredEntries = filterPlanningEntries(allEntries)
+
+  if(!filteredEntries.length){
+    planningList.innerHTML = `<div class="empty">${t('planning.empty')}</div>`
+    return
+  }
+
+  const groups = new Map()
+  filteredEntries.forEach(item => {
+    const key = planningGroupKey(item)
+    if(!groups.has(key)) groups.set(key, [])
+    groups.get(key).push(item)
+  })
+
+  planningList.innerHTML = Array.from(groups.entries()).map(([monthKey, items]) => {
+    const monthTitle = monthKey === 'zonder-datum'
+      ? '-'
+      : new Date(Number(monthKey.slice(0, 4)), Number(monthKey.slice(5, 7)) - 1, 1).toLocaleDateString(localeTag(), { month: 'long', year: 'numeric' })
+
+    return `
+      <div class="planning-month">
+        <h3 class="planning-month-title">${monthTitle}</h3>
+        <div class="planning-month-list">
+          ${items.map(item => {
+            const details = renderPlanningDetails(item)
+            const dateValue = planningDateField(item)
+            return `
+              <div class="planning-item" data-planning-id="${item.id}">
+                <strong>${dateValue ? formatBirthDate(dateValue) : '-'}</strong>
+                <span>${item.sheepTag || '-'}</span>
+                <span>${item.location || '-'}</span>
+                <span class="planning-item-type">${item.typeLabel}</span>
+                <span class="planning-item-status planning-item-status--${item.status}">${planningStatusLabel(item.status)}</span>
+                ${renderPlanningActions(item)}
+                <small>${details}</small>
+              </div>
+            `
+          }).join('')}
+        </div>
+      </div>
+    `
+  }).join('')
+}
+
+function initPlanningFilters(){
+  if(hasInitializedPlanningFilters) return
+  hasInitializedPlanningFilters = true
+
+  const filterIds = ['planning-filter-period', 'planning-filter-paddock', 'planning-filter-sheep']
+  filterIds.forEach(id => {
+    document.getElementById(id)?.addEventListener('change', () => {
+      renderPlanning()
+    })
+  })
+}
+
 function render(){
   updateZoneEmptyStates()
   const paddockList = document.getElementById('paddock-list')
   const sheepList = document.getElementById('sheep-list')
+  const sheepOutList = document.getElementById('sheep-out-list')
+  const pedigreeList = document.getElementById('pedigree-list')
   const historyList = document.getElementById('history-list')
   const billingSummary = document.getElementById('billing-summary')
   const sheepPaddockModal = document.getElementById('sheep-paddock-modal')
@@ -1663,11 +2850,22 @@ function render(){
   const formatEuro = (value) => new Intl.NumberFormat(euroLocale, { style: 'currency', currency: 'EUR', minimumFractionDigits: value % 1 === 0 ? 0 : 2, maximumFractionDigits: 2 }).format(value)
   const paddockCount = state.paddocks.length
   const zoneCount = state.paddocks.reduce((sum, paddock) => sum + paddock.zones.length, 0)
-  const sheepCount = state.sheep.length
+  const activeSheep = state.sheep.filter(isActiveFlockSheep)
+  const outOfFlockSheep = state.sheep.filter(isOutOfFlockSheep)
+  const inactiveSheepCount = outOfFlockSheep.length
+  // Until authentication is implemented, billing assumes a single user.
+  const userCount = 1
+  const billableUserCount = Math.max(0, userCount - 2)
+  const visibleOutOfFlockSheep = showAllOutOfFlockSheep
+    ? outOfFlockSheep
+    : outOfFlockSheep.filter(sheep => !sheep.outHidden)
+  const sheepCount = activeSheep.length
   const billingLines = [
     { label: t('billing.fields'), countLabel: `${t('billing.unlimited')} ${t('billing.fields').toLowerCase()}`, rate: 0, total: 0, included: true },
     { label: t('billing.zones'), countLabel: `${zoneCount}`, rate: 0.3, total: zoneCount * 0.3, included: false },
-    { label: t('billing.sheep'), countLabel: `${sheepCount}`, rate: 0.5, total: sheepCount * 0.5, included: false }
+    { label: t('billing.users'), countLabel: `${userCount}`, rate: 0.5, total: billableUserCount * 0.5, included: false },
+    { label: t('billing.sheep.active'), countLabel: `${sheepCount}`, rate: 0.3, total: sheepCount * 0.3, included: false },
+    { label: t('billing.sheep.inactive'), countLabel: `${inactiveSheepCount}`, rate: 0.05, total: inactiveSheepCount * 0.05, included: false }
   ]
   const billingTotal = billingLines.reduce((sum, line) => sum + line.total, 0)
 
@@ -1675,7 +2873,7 @@ function render(){
     <button type="button" class="add-paddock-block" aria-label="${t('aria.addPaddock')}">+</button>
   `
 
-  sheepList.innerHTML = state.sheep.map(s => {
+  const activeCards = activeSheep.map(s => {
     const lastShearing = latestShearingRecord(s)
     const lastInjection = latestInjectionRecord(s)
     const nextInjection = nextInjectionRecord(s)
@@ -1708,20 +2906,147 @@ function render(){
           <button type="button" class="sheep-injection-button" data-id="${s.id}" aria-label="${t('aria.registerSheepInjection', { tag: s.tag })}" title="${t('aria.registerSheepInjection', { tag: s.tag })}">${syringeIcon()}</button>
           <button type="button" class="sheep-shearing-button" data-id="${s.id}" aria-label="${t('aria.registerSheepShearing', { tag: s.tag })}" title="${t('aria.registerSheepShearing', { tag: s.tag })}">${scissorsIcon()}</button>
           <button type="button" class="move-button" data-id="${s.id}" aria-label="${t('actions.move')}" title="${t('actions.move')}">${doubleArrowIcon()}</button>
-          <button type="button" class="sheep-delete-button" data-id="${s.id}" aria-label="${t('aria.deleteSheep')}">${recycleBinIcon()}</button>
+          <button type="button" class="sheep-delete-button" data-id="${s.id}" aria-label="${t('aria.moveSheepOut', { tag: s.tag })}" title="${t('aria.moveSheepOut', { tag: s.tag })}">${recycleBinIcon()}</button>
         </div>
       </div>
     `
-  }).join('') + `
-      <button type="button" class="sheep-card add-sheep-card" id="add-sheep-block" aria-label="${t('aria.addSheep')}">
-        <span class="add-zone-icon">+</span>
-      </button>
+  }).join('')
+
+  const outCards = visibleOutOfFlockSheep.map(s => `
+    <div class="sheep-card sheep-card--out">
+      <div class="sheep-card-body">
+        <div class="sheep-name-row">
+          <span class="sheep-name-label">${s.tag}${s.earmark ? ` <span class="sheep-name-earmark">- ${s.earmark}</span>` : ''}${genderIcon(s.gender)}${s.outDate ? ` <span class="sheep-out-status">${outReasonIcon(s.outReason)} ${formatBirthDate(s.outDate)}</span>` : ''}</span>
+        </div>
+        <small class="sheep-out-reason">${outReasonLabel(s.outReason)}</small>
+        ${s.outNotes ? `<small class="sheep-out-notes">${escapeHtml(s.outNotes)}</small>` : ''}
+      </div>
+      <div class="sheep-actions sheep-actions--single">
+        <button type="button" class="sheep-out-visibility-button" data-id="${s.id}" aria-label="${t('aria.toggleOutVisibility', { tag: s.tag })}">${s.outHidden ? t('sheep.out.show') : t('sheep.out.hide')}</button>
+      </div>
+    </div>
+  `).join('')
+
+  if(sheepList){
+    sheepList.innerHTML = `
+      <div class="sheep-grid">
+        <button type="button" class="add-paddock-block add-sheep-block" id="add-sheep-block" aria-label="${t('aria.addSheep')}">
+          <span class="add-zone-icon">+</span>
+        </button>
+        ${activeCards}
+      </div>
     `
+  }
+
+  if(sheepOutList){
+    sheepOutList.innerHTML = `
+      <div class="section-header sheep-out-header">
+        <h3>${t('sheep.out.title')}</h3>
+        <label class="out-of-flock-toggle" for="out-of-flock-show-all-toggle">
+          <span>${t('sheep.out.showAll')}</span>
+          <input type="checkbox" id="out-of-flock-show-all-toggle" class="out-of-flock-toggle-slider" ${showAllOutOfFlockSheep ? 'checked' : ''}>
+        </label>
+      </div>
+      <div class="sheep-grid sheep-grid--out">
+        ${outCards || `<div class="empty sheep-out-empty">${t('sheep.out.empty')}</div>`}
+      </div>
+    `
+  }
+
+  if(pedigreeList){
+    const activePedigreeSheep = state.sheep.filter(isActiveFlockSheep)
+    const sheepById = new Map(state.sheep.map(s => [s.id, s]))
+    const truncateTag = (value) => {
+      const text = (value || '-').trim() || '-'
+      return text.length > 14 ? `${text.slice(0, 11)}...` : text
+    }
+    const sexPrefix = (sheep) => {
+      if(!sheep) return ''
+      if(sheep.gender === 'female') return '♀ '
+      if(sheep.gender === 'male') return '♂ '
+      return ''
+    }
+    const nodeLabel = (sheep) => {
+      if(!sheep) return '-'
+      return `${sexPrefix(sheep)}${truncateTag(sheep.tag || '-')}`
+    }
+
+    const pedigreeCards = activePedigreeSheep
+      .filter(sheep => sheep.motherId || sheep.fatherId)
+      .slice()
+      .sort((a, b) => (a.tag || '').localeCompare(b.tag || '', localeTag()))
+      .map(sheep => {
+        const mother = sheep.motherId ? sheepById.get(sheep.motherId) : null
+        const father = sheep.fatherId ? sheepById.get(sheep.fatherId) : null
+        const maternalGrandMother = mother && mother.motherId ? sheepById.get(mother.motherId) : null
+        const maternalGrandFather = mother && mother.fatherId ? sheepById.get(mother.fatherId) : null
+        const paternalGrandMother = father && father.motherId ? sheepById.get(father.motherId) : null
+        const paternalGrandFather = father && father.fatherId ? sheepById.get(father.fatherId) : null
+
+        const tag = sheep.tag || '-'
+        const motherTag = mother ? `${sexPrefix(mother)}${mother.tag || '-'}` : '-'
+        const fatherTag = father ? `${sexPrefix(father)}${father.tag || '-'}` : '-'
+
+        return `
+          <article class="pedigree-single">
+            <h3 class="pedigree-title">${escapeHtml(`${sexPrefix(sheep)}${tag}`)}</h3>
+            <div class="pedigree-tree-wrap">
+              <svg class="pedigree-tree-svg" viewBox="0 0 820 220" role="img" aria-label="${escapeHtml(tag)} ${t('section.pedigree')}">
+                <line class="pedigree-line" x1="200" y1="42" x2="320" y2="73"></line>
+                <line class="pedigree-line" x1="200" y1="92" x2="320" y2="73"></line>
+                <line class="pedigree-line" x1="200" y1="132" x2="320" y2="163"></line>
+                <line class="pedigree-line" x1="200" y1="182" x2="320" y2="163"></line>
+                <line class="pedigree-line" x1="500" y1="73" x2="620" y2="118"></line>
+                <line class="pedigree-line" x1="500" y1="163" x2="620" y2="118"></line>
+
+                <rect class="pedigree-node-box" x="20" y="22" width="180" height="40" rx="10"></rect>
+                <text class="pedigree-node-text" x="110" y="42" text-anchor="middle">${escapeHtml(nodeLabel(maternalGrandMother))}</text>
+                <rect class="pedigree-node-box" x="20" y="72" width="180" height="40" rx="10"></rect>
+                <text class="pedigree-node-text" x="110" y="92" text-anchor="middle">${escapeHtml(nodeLabel(maternalGrandFather))}</text>
+                <rect class="pedigree-node-box" x="20" y="112" width="180" height="40" rx="10"></rect>
+                <text class="pedigree-node-text" x="110" y="132" text-anchor="middle">${escapeHtml(nodeLabel(paternalGrandMother))}</text>
+                <rect class="pedigree-node-box" x="20" y="162" width="180" height="40" rx="10"></rect>
+                <text class="pedigree-node-text" x="110" y="182" text-anchor="middle">${escapeHtml(nodeLabel(paternalGrandFather))}</text>
+
+                <rect class="pedigree-node-box" x="320" y="53" width="180" height="40" rx="10"></rect>
+                <text class="pedigree-node-text" x="410" y="73" text-anchor="middle">${escapeHtml(nodeLabel(mother))}</text>
+                <rect class="pedigree-node-box" x="320" y="143" width="180" height="40" rx="10"></rect>
+                <text class="pedigree-node-text" x="410" y="163" text-anchor="middle">${escapeHtml(nodeLabel(father))}</text>
+
+                <rect class="pedigree-node-box pedigree-node-box--focus" x="620" y="98" width="180" height="40" rx="10"></rect>
+                <text class="pedigree-node-text pedigree-node-text--focus" x="710" y="118" text-anchor="middle">${escapeHtml(nodeLabel(sheep))}</text>
+              </svg>
+            </div>
+            <div class="pedigree-meta">
+              <div><strong>${t('pedigree.mother')}:</strong> ${escapeHtml(motherTag)}</div>
+              <div><strong>${t('pedigree.father')}:</strong> ${escapeHtml(fatherTag)}</div>
+            </div>
+          </article>
+        `
+      })
+      .join('')
+
+    if(!pedigreeCards){
+      pedigreeList.innerHTML = `<div class="empty">${t('pedigree.empty')}</div>`
+    } else {
+      pedigreeList.innerHTML = pedigreeCards
+    }
+  }
 
   if(historyList){
-    historyList.classList.toggle('is-scrollable', state.history.length > 5)
-    historyList.innerHTML = state.history.length
-      ? state.history.map(h => `<div class="history-item"><span class="history-meta">${formatDateTime(h.ts)} - ${h.entity}</span><span class="history-message">${h.message}</span></div>`).join('')
+    const generatedHistory = groupHistoryEntries(generateHistoryFromEvents()).slice(0, 100)
+    historyList.classList.toggle('is-scrollable', generatedHistory.length > 5)
+    historyList.innerHTML = generatedHistory.length
+      ? generatedHistory.map(h => {
+          const headerParts = [
+            formatDateTime(h.ts),
+            h.what,
+            h.detail,
+            h.repeatBy ? t('history.repeatBy', { date: h.repeatBy }) : null
+          ].filter(Boolean)
+          const sheepLine = h.sheepNames.length ? `<div class="history-sheep-list">${h.sheepNames.map(name => `<span class="history-sheep-chip">${name}</span>`).join('')}</div>` : ''
+          return `<div class="history-item"><div class="history-meta">${headerParts.join(' - ')}</div>${sheepLine}</div>`
+        }).join('')
       : `<div class="empty">${t('history.empty')}</div>`
   }
 
@@ -1754,10 +3079,14 @@ function render(){
     renderPayPalBillingBlock()
   }
 
-  if(sheepPaddockModal && sheepZoneModal){
-    setSheepModalDefaultSelection()
+  const sheepModal = document.getElementById('sheep-modal')
+  const isSheepModalOpen = !!sheepModal && !sheepModal.classList.contains('hidden')
+  if(!isSheepModalOpen){
+    if(sheepPaddockModal && sheepZoneModal){
+      setSheepModalDefaultSelection()
+    }
+    populateParentSheepSelects()
   }
-  populateParentSheepSelects()
 
   if(movePaddockModal){
     populatePaddockSelect(movePaddockModal)
@@ -1766,6 +3095,8 @@ function render(){
     moveZoneModal.innerHTML = `<option value="">${t('select.paddock.first')}</option>`
     moveZoneModal.disabled = true
   }
+
+  renderPlanning()
 }
 
 function renderPaddock(p){
@@ -1778,7 +3109,7 @@ function renderPaddock(p){
     ? `<img class="paddock-flag" src="flags/${paddockFlagCode}.png" alt="${paddockCountry} flag">`
     : ''
   const paddockTotalArea = p.zones.reduce((sum, zone) => sum + (Number.isFinite(zone.area) ? zone.area : 0), 0)
-  const paddockSheepCount = state.sheep.filter(s => s.paddockId === p.id && p.zones.some(z => z.id === s.zoneId)).length
+  const paddockSheepCount = state.sheep.filter(s => isActiveFlockSheep(s) && s.paddockId === p.id && p.zones.some(z => z.id === s.zoneId)).length
   const areaLabel = `${new Intl.NumberFormat(localeTag(), { maximumFractionDigits: 2 }).format(paddockTotalArea)} m2`
   const sheepLabel = `${paddockSheepCount} ${paddockSheepCount === 1 ? t('paddock.sheep.singular') : t('paddock.sheep.plural')}`
   const injectionButtonHtml = paddockSheepCount > 0
@@ -1829,7 +3160,7 @@ function renderPaddock(p){
     ${renderPaddockWeather(p, isWeatherExpanded)}
     <div class="zone-list" ${isExpanded ? '' : 'style="display:none"'}>
       ${p.zones.map(z => {
-        const sheepInZone = state.sheep.filter(s => s.paddockId === p.id && s.zoneId === z.id)
+        const sheepInZone = state.sheep.filter(s => isActiveFlockSheep(s) && s.paddockId === p.id && s.zoneId === z.id)
         const sheepCount = sheepInZone.length
         const zoneArea = z.area !== null ? `${z.area} m2` : ''
         const zonePerimeter = z.perimeter !== null ? `${z.perimeter} m` : ''
@@ -1914,11 +3245,11 @@ function populateParentSheepSelects(){
   const motherSelect = document.getElementById('sheep-mother-modal')
   const fatherSelect = document.getElementById('sheep-father-modal')
   const femaleOptions = state.sheep
-    .filter(s => s.gender === 'female')
+    .filter(s => isActiveFlockSheep(s) && s.gender === 'female')
     .map(s => `<option value="${s.id}">${s.tag}</option>`)
     .join('')
   const maleOptions = state.sheep
-    .filter(s => s.gender === 'male')
+    .filter(s => isActiveFlockSheep(s) && s.gender === 'male')
     .map(s => `<option value="${s.id}">${s.tag}</option>`)
     .join('')
 
@@ -1937,7 +3268,7 @@ function populatePaddockSelect(select){
 
 function zoneSheepNames(paddockId, zoneId){
   return state.sheep
-    .filter(s => s.paddockId === paddockId && s.zoneId === zoneId)
+    .filter(s => isActiveFlockSheep(s) && s.paddockId === paddockId && s.zoneId === zoneId)
     .map(s => s.tag)
 }
 
@@ -2032,7 +3363,15 @@ function openZoneDeleteMoveModal(sourcePaddockId, sourceZoneId, sheepCount){
   if(allTargets.length === 1){
     const target = allTargets[0]
     const sheepToMove = state.sheep.filter(s => s.paddockId === sourcePaddockId && s.zoneId === sourceZoneId)
-    const movedNames = sheepNamesList(sheepToMove)
+    const fromLabel = `${sourcePaddock.name} / ${sourceZone.name}`
+    const toLabel = `${paddockName(target.paddockId)} / ${zoneName(target.paddockId, target.zoneId)}`
+    sheepToMove.forEach(sheep => {
+      addEvent('SHEEP_MOVED', {
+        sheep: sheep.tag,
+        from: fromLabel,
+        to: toLabel
+      })
+    })
     state.sheep.forEach(s => {
       if(s.paddockId === sourcePaddockId && s.zoneId === sourceZoneId){
         s.paddockId = target.paddockId
@@ -2041,7 +3380,12 @@ function openZoneDeleteMoveModal(sourcePaddockId, sourceZoneId, sheepCount){
       }
     })
     sourcePaddock.zones = sourcePaddock.zones.filter(z => z.id !== sourceZoneId)
-    addHistory('zone', t('history.zoneMove.auto', { paddock: sourcePaddock.name, name: sourceZone.name, target: `${paddockName(target.paddockId)} / ${zoneName(target.paddockId, target.zoneId)}`, sheep: movedNames }))
+    addEvent('ZONE_DELETED', {
+      zoneId: sourceZoneId,
+      paddockId: sourcePaddockId,
+      name: sourceZone.name,
+      sheepMovedCount: sheepToMove.length
+    })
     save(); render()
     return
   }
@@ -2198,7 +3542,15 @@ function openPaddockDeleteMoveModal(sourcePaddockId, sheepCount){
   if(allTargets.length === 1){
     const target = allTargets[0]
     const sheepToMove = state.sheep.filter(s => s.paddockId === sourcePaddockId)
-    const movedNames = sheepNamesList(sheepToMove)
+    const toLabel = `${paddockName(target.paddockId)} / ${zoneName(target.paddockId, target.zoneId)}`
+    sheepToMove.forEach(sheep => {
+      const fromLabel = `${sourcePaddock.name}${sheep.zoneId ? ' / ' + zoneName(sourcePaddockId, sheep.zoneId) : ''}`
+      addEvent('SHEEP_MOVED', {
+        sheep: sheep.tag,
+        from: fromLabel,
+        to: toLabel
+      })
+    })
     state.sheep.forEach(s => {
       if(s.paddockId === sourcePaddockId){
         s.paddockId = target.paddockId
@@ -2208,7 +3560,11 @@ function openPaddockDeleteMoveModal(sourcePaddockId, sheepCount){
     })
     state.paddocks = state.paddocks.filter(p => p.id !== sourcePaddockId)
     collapsedPaddockIds.delete(sourcePaddockId)
-    addHistory('weide', t('history.paddockMove.auto', { name: sourcePaddock.name, target: `${paddockName(target.paddockId)} / ${zoneName(target.paddockId, target.zoneId)}`, sheep: movedNames }))
+    addEvent('PADDOCK_DELETED', {
+      paddockId: sourcePaddockId,
+      name: sourcePaddock.name,
+      sheepMovedCount: sheepToMove.length
+    })
     save(); render()
     return
   }
@@ -2597,6 +3953,8 @@ function closeModal(id){
 }
 
 document.getElementById('download-data-btn')?.addEventListener('click', exportData)
+initAutoDownloadOnCloseToggle()
+initPlanningFilters()
 
 window.addEventListener('pagehide', handleExitDownload)
 window.addEventListener('beforeunload', handleExitDownload)
@@ -2610,6 +3968,8 @@ document.getElementById('clear-data-btn')?.addEventListener('click', () => {
   state.paddocks = []
   state.sheep = []
   state.history = []
+  state.events = []
+  state.planningItems = []
   collapsedPaddockIds.clear()
   expandedWeatherPaddocks.clear()
   ensureDefaultStal()
@@ -2654,6 +4014,20 @@ document.getElementById('delete-confirm-close')?.addEventListener('click', close
 document.getElementById('delete-confirm-cancel')?.addEventListener('click', closeDeleteConfirmModal)
 document.getElementById('delete-confirm-submit')?.addEventListener('click', executeDeleteConfirmed)
 document.getElementById('delete-confirm-backdrop')?.addEventListener('click', closeDeleteConfirmModal)
+
+document.getElementById('sheep-out-modal-close')?.addEventListener('click', closeSheepOutOfFlockModal)
+document.getElementById('sheep-out-modal-backdrop')?.addEventListener('click', closeSheepOutOfFlockModal)
+document.getElementById('sheep-out-modal-form')?.addEventListener('submit', e => {
+  e.preventDefault()
+  const reasonInput = document.getElementById('sheep-out-modal-reason')
+  const dateInput = document.getElementById('sheep-out-modal-date')
+  const notesInput = document.getElementById('sheep-out-modal-notes')
+  const reason = reasonInput ? reasonInput.value : ''
+  const date = dateInput ? dateInput.value.trim() : ''
+  const notes = notesInput ? notesInput.value : ''
+  if(!reason || !date) return
+  moveSheepOutOfFlock(reason, date, notes)
+})
 
 document.getElementById('paddock-edit-modal-close')?.addEventListener('click', closeEditPaddockModal)
 document.getElementById('paddock-edit-modal-backdrop')?.addEventListener('click', closeEditPaddockModal)
@@ -2717,7 +4091,11 @@ document.getElementById('move-modal-form')?.addEventListener('submit', e => {
   sheep.paddockId = paddockId
   sheep.zoneId = zoneId || null
   sheep.lastUpdated = Date.now()
-  addHistory('schaap', t('history.sheep.moved', { sheep: sheep.tag, from: fromLabel, to: toLabel }))
+  addEvent('SHEEP_MOVED', {
+    sheep: sheep.tag,
+    from: fromLabel,
+    to: toLabel
+  })
   save(); render(); closeModal('move-modal')
 })
 
@@ -2728,8 +4106,12 @@ document.getElementById('paddock-modal-form')?.addEventListener('submit', e => {
   if(!name) return
   const paddockId = uid()
   state.paddocks.push({id:paddockId, name, postcode, zones: []})
+  addEvent('PADDOCK_CREATED', {
+    paddockId,
+    name,
+    postcode
+  })
   collapsedPaddockIds.add(paddockId)
-  addHistory('weide', t('history.paddock.added', { name }))
   document.getElementById('paddock-modal-name').value = ''
   document.getElementById('paddock-modal-postcode').value = ''
   save(); render(); closeModal('paddock-modal')
@@ -2756,10 +4138,16 @@ document.getElementById('paddock-edit-form')?.addEventListener('submit', e => {
   paddock.postcode = nextPostcode
 
   if(beforeName !== paddock.name || beforePostcode !== paddock.postcode){
+    addEvent('PADDOCK_UPDATED', {
+      paddockId: paddock.id,
+      previousName: beforeName,
+      newName: paddock.name,
+      previousPostcode: beforePostcode,
+      newPostcode: paddock.postcode
+    })
     const details = []
     if(beforeName !== paddock.name) details.push(t('history.details.name', { from: beforeName, name: paddock.name }))
     if(beforePostcode !== paddock.postcode) details.push(t('history.details.postcode', { from: beforePostcode || '-', postcode: paddock.postcode || '-' }))
-    addHistory('weide', t('history.paddock.updated', { details: details.join(', ') }))
   }
 
   save(); render(); closeEditPaddockModal()
@@ -2784,7 +4172,7 @@ document.getElementById('paddock-injection-form')?.addEventListener('submit', e 
   if(!date || !product || (!noRepeat && !repeatDate)) return
 
   const selectedSheepIds = Array.from(document.querySelectorAll('#paddock-injection-sheep-list input[name="paddock-injection-sheep"]:checked')).map(input => input.value)
-  const sheepInPaddock = state.sheep.filter(s => s.paddockId === pendingInjectionPaddockId && selectedSheepIds.includes(s.id))
+  const sheepInPaddock = state.sheep.filter(s => isActiveFlockSheep(s) && s.paddockId === pendingInjectionPaddockId && selectedSheepIds.includes(s.id))
   if(!sheepInPaddock.length) return
   const injection = { id: uid(), date, product, repeatDate: noRepeat ? '' : repeatDate }
 
@@ -2792,24 +4180,20 @@ document.getElementById('paddock-injection-form')?.addEventListener('submit', e 
     if(!Array.isArray(sheep.injections)) sheep.injections = []
     sheep.injections.push({ ...injection, id: uid() })
     sheep.lastUpdated = Date.now()
+    addEvent('SHEEP_INJECTION_REGISTERED', {
+      paddockId: sheep.paddockId,
+      zoneId: sheep.zoneId,
+      sheepId: sheep.id,
+      sheepTag: sheep.tag,
+      date,
+      product,
+      repeatDate: noRepeat ? null : repeatDate
+    })
   })
 
   const displayLocation = pendingInjectionZoneId ? zoneName(pendingInjectionPaddockId, pendingInjectionZoneId) : paddock.name
   if(noRepeat){
-    addHistory('injectie', t('history.injection.appliedNoRepeat', {
-      paddock: displayLocation,
-      product,
-      date: formatBirthDate(date),
-      count: sheepInPaddock.length
-    }))
   } else {
-    addHistory('injectie', t('history.injection.applied', {
-      paddock: displayLocation,
-      product,
-      date: formatBirthDate(date),
-      repeatDate: formatBirthDate(repeatDate),
-      count: sheepInPaddock.length
-    }))
   }
 
   save(); render(); closePaddockInjectionModal()
@@ -2827,7 +4211,7 @@ document.getElementById('paddock-shearing-form')?.addEventListener('submit', e =
   if(!shearingDate) return
 
   const selectedSheepIds = Array.from(document.querySelectorAll('#paddock-shearing-sheep-list input[name="paddock-shearing-sheep"]:checked')).map(input => input.value)
-  const sheepInPaddock = state.sheep.filter(s => s.paddockId === pendingShearingPaddockId && selectedSheepIds.includes(s.id))
+  const sheepInPaddock = state.sheep.filter(s => isActiveFlockSheep(s) && s.paddockId === pendingShearingPaddockId && selectedSheepIds.includes(s.id))
   if(!sheepInPaddock.length){
     return
   }
@@ -2836,14 +4220,16 @@ document.getElementById('paddock-shearing-form')?.addEventListener('submit', e =
     if(!Array.isArray(sheep.shearings)) sheep.shearings = []
     sheep.shearings.push({ id: uid(), date: shearingDate })
     sheep.lastUpdated = Date.now()
+    addEvent('SHEEP_SHEARING_REGISTERED', {
+      paddockId: sheep.paddockId,
+      zoneId: sheep.zoneId,
+      sheepId: sheep.id,
+      sheepTag: sheep.tag,
+      date: shearingDate
+    })
   })
 
   const displayLocation = pendingShearingZoneId ? zoneName(pendingShearingPaddockId, pendingShearingZoneId) : paddock.name
-  addHistory('scheren', t('history.shearing.applied', {
-    paddock: displayLocation,
-    date: formatBirthDate(shearingDate),
-    count: sheepInPaddock.length
-  }))
 
   save(); render(); closePaddockShearingModal()
 })
@@ -2874,20 +4260,18 @@ document.getElementById('sheep-injection-form')?.addEventListener('submit', e =>
     repeatDate: noRepeat ? '' : repeatDate
   })
   sheep.lastUpdated = Date.now()
+  addEvent('SHEEP_INJECTION_REGISTERED', {
+    paddockId: sheep.paddockId,
+    zoneId: sheep.zoneId,
+    sheepId: sheep.id,
+    sheepTag: sheep.tag,
+    date,
+    product,
+    repeatDate: noRepeat ? null : repeatDate
+  })
 
   if(noRepeat){
-    addHistory('injectie', t('history.injection.sheepNoRepeat', {
-      sheep: sheep.tag,
-      product,
-      date: formatBirthDate(date)
-    }))
   } else {
-    addHistory('injectie', t('history.injection.sheep', {
-      sheep: sheep.tag,
-      product,
-      date: formatBirthDate(date),
-      repeatDate: formatBirthDate(repeatDate)
-    }))
   }
 
   save(); render(); closeSheepInjectionModal()
@@ -2907,11 +4291,13 @@ document.getElementById('sheep-shearing-form')?.addEventListener('submit', e => 
   if(!Array.isArray(sheep.shearings)) sheep.shearings = []
   sheep.shearings.push({ id: uid(), date: shearingDate })
   sheep.lastUpdated = Date.now()
-
-  addHistory('scheren', t('history.shearing.sheep', {
-    sheep: sheep.tag,
-    date: formatBirthDate(shearingDate)
-  }))
+  addEvent('SHEEP_SHEARING_REGISTERED', {
+    paddockId: sheep.paddockId,
+    zoneId: sheep.zoneId,
+    sheepId: sheep.id,
+    sheepTag: sheep.tag,
+    date: shearingDate
+  })
 
   save(); render(); closeSheepShearingModal()
 })
@@ -2946,12 +4332,23 @@ document.getElementById('zone-edit-form')?.addEventListener('submit', e => {
   zone.notes = nextNotes
 
   if(beforeName !== zone.name || beforeArea !== zone.area || beforePerimeter !== zone.perimeter || beforeNotes !== zone.notes){
+    addEvent('ZONE_UPDATED', {
+      zoneId: zone.id,
+      paddockId: paddock.id,
+      previousName: beforeName,
+      newName: zone.name,
+      previousArea: beforeArea ?? null,
+      newArea: zone.area ?? null,
+      previousPerimeter: beforePerimeter ?? null,
+      newPerimeter: zone.perimeter ?? null,
+      previousNotes: beforeNotes || null,
+      newNotes: zone.notes || null
+    })
     const details = []
     if(beforeName !== zone.name) details.push(t('history.details.name', { from: beforeName, name: zone.name }))
     if(beforeArea !== zone.area) details.push(t('history.details.area', { from: beforeArea ?? '-', area: zone.area ?? '-' }))
     if(beforePerimeter !== zone.perimeter) details.push(t('history.details.perimeter', { from: beforePerimeter ?? '-', perimeter: zone.perimeter ?? '-' }))
     if(beforeNotes !== zone.notes) details.push(t('history.details.notesUpdated'))
-    addHistory('zone', t('history.zone.updated', { location: `${paddock.name} / ${zone.name}`, details: details.join(', ') }))
   }
 
   save(); render(); closeEditZoneModal()
@@ -2977,8 +4374,17 @@ document.getElementById('sheep-modal-form')?.addEventListener('submit', e => {
   }
   if(motherId && !state.sheep.some(s => s.id === motherId && s.gender === 'female')) return
   if(fatherId && !state.sheep.some(s => s.id === fatherId && s.gender === 'male')) return
-  state.sheep.push({id:uid(), tag, earmark: earmark || null, birthDate: birthDate || null, injections: [], shearings: [], gender, motherId, fatherId, paddockId, zoneId: zoneId || null, lastUpdated: Date.now()})
-  addHistory(t('entity.sheep'), t('history.sheep.added', { tag, location: `${paddockName(paddockId)}${zoneId ? ' / ' + zoneName(paddockId, zoneId) : ''}` }))
+  const sheepId = uid()
+  state.sheep.push({id:sheepId, tag, earmark: earmark || null, birthDate: birthDate || null, injections: [], shearings: [], gender, motherId, fatherId, paddockId, zoneId: zoneId || null, flockStatus: 'active', outReason: null, outDate: null, outNotes: null, outHidden: false, outFromPaddockId: null, outFromZoneId: null, lastUpdated: Date.now()})
+  addEvent('SHEEP_CREATED', {
+    sheepId,
+    tag,
+    gender,
+    paddockId,
+    zoneId: zoneId || null,
+    earmark: earmark || null,
+    birthDate: birthDate || null
+  })
   document.getElementById('sheep-modal-tag').value = ''
   if(earmarkInput){
     earmarkInput.value = ''
@@ -3026,10 +4432,18 @@ document.getElementById('sheep-tag-edit-form')?.addEventListener('submit', e => 
   }
   sheep.lastUpdated = Date.now()
   if(previousTag !== nextTag || (!previousEarmark && nextEarmark)){
+    addEvent('SHEEP_UPDATED', {
+      sheepId: sheep.id,
+      previousTag: previousTag,
+      newTag: nextTag,
+      previousEarmark: previousEarmark,
+      newEarmark: (!previousEarmark && nextEarmark) ? nextEarmark : previousEarmark,
+      previousBirthDate: previousBirthDate,
+      newBirthDate: (!previousBirthDate && nextBirthDate) ? nextBirthDate : previousBirthDate
+    })
     const namePart = previousTag !== nextTag ? t('history.details.name', { from: previousTag, to: nextTag }) : null
     const earmarkPart = (!previousEarmark && nextEarmark) ? t('history.details.earmarkAdded', { earmark: nextEarmark }) : null
     const details = [namePart, earmarkPart].filter(Boolean).join(', ')
-    addHistory(t('entity.sheep'), t('history.sheep.updated', { details }))
   }
   save(); render(); closeEditSheepTagModal()
 })
@@ -3132,7 +4546,15 @@ document.getElementById('zone-delete-move-form')?.addEventListener('submit', e =
   if(!sourcePaddock) return
   const sourceZone = getZone(pendingZoneDeletion.sourcePaddockId, pendingZoneDeletion.sourceZoneId)
   const sheepToMove = state.sheep.filter(s => s.paddockId === pendingZoneDeletion.sourcePaddockId && s.zoneId === pendingZoneDeletion.sourceZoneId)
-  const movedNames = sheepNamesList(sheepToMove)
+  const fromLabel = `${sourcePaddock.name} / ${sourceZone ? sourceZone.name : t('unknown')}`
+  const toLabel = `${paddockName(targetPaddockId)} / ${zoneName(targetPaddockId, targetZoneId)}`
+  sheepToMove.forEach(sheep => {
+    addEvent('SHEEP_MOVED', {
+      sheep: sheep.tag,
+      from: fromLabel,
+      to: toLabel
+    })
+  })
 
   state.sheep.forEach(s => {
     if(s.paddockId === pendingZoneDeletion.sourcePaddockId && s.zoneId === pendingZoneDeletion.sourceZoneId){
@@ -3143,7 +4565,12 @@ document.getElementById('zone-delete-move-form')?.addEventListener('submit', e =
   })
 
   sourcePaddock.zones = sourcePaddock.zones.filter(z => z.id !== pendingZoneDeletion.sourceZoneId)
-  addHistory('zone', t('history.zoneMove.manual', { paddock: sourcePaddock.name, name: sourceZone ? sourceZone.name : t('unknown'), target: `${paddockName(targetPaddockId)} / ${zoneName(targetPaddockId, targetZoneId)}`, sheep: movedNames }))
+  addEvent('ZONE_DELETED', {
+    zoneId: pendingZoneDeletion.sourceZoneId,
+    paddockId: pendingZoneDeletion.sourcePaddockId,
+    name: sourceZone ? sourceZone.name : null,
+    sheepMovedCount: sheepToMove.length
+  })
   save(); render(); closeZoneDeleteMoveModal()
 })
 
@@ -3156,7 +4583,15 @@ document.getElementById('paddock-delete-move-form')?.addEventListener('submit', 
   if(!targetPaddockId || !targetZoneId) return
   const sourcePaddock = getPaddock(pendingPaddockDeletion.sourcePaddockId)
   const sheepToMove = state.sheep.filter(s => s.paddockId === pendingPaddockDeletion.sourcePaddockId)
-  const movedNames = sheepNamesList(sheepToMove)
+  const toLabel = `${paddockName(targetPaddockId)} / ${zoneName(targetPaddockId, targetZoneId)}`
+  sheepToMove.forEach(sheep => {
+    const fromLabel = `${sourcePaddock ? sourcePaddock.name : t('unknown')}${sheep.zoneId ? ' / ' + zoneName(pendingPaddockDeletion.sourcePaddockId, sheep.zoneId) : ''}`
+    addEvent('SHEEP_MOVED', {
+      sheep: sheep.tag,
+      from: fromLabel,
+      to: toLabel
+    })
+  })
 
   state.sheep.forEach(s => {
     if(s.paddockId === pendingPaddockDeletion.sourcePaddockId){
@@ -3168,7 +4603,11 @@ document.getElementById('paddock-delete-move-form')?.addEventListener('submit', 
 
   state.paddocks = state.paddocks.filter(p => p.id !== pendingPaddockDeletion.sourcePaddockId)
   collapsedPaddockIds.delete(pendingPaddockDeletion.sourcePaddockId)
-  addHistory('weide', t('history.paddockMove.manual', { name: sourcePaddock ? sourcePaddock.name : t('unknown'), target: `${paddockName(targetPaddockId)} / ${zoneName(targetPaddockId, targetZoneId)}`, sheep: movedNames }))
+  addEvent('PADDOCK_DELETED', {
+    paddockId: pendingPaddockDeletion.sourcePaddockId,
+    name: sourcePaddock ? sourcePaddock.name : null,
+    sheepMovedCount: sheepToMove.length
+  })
   save(); render(); closePaddockDeleteMoveModal()
 })
 
@@ -3183,7 +4622,15 @@ document.getElementById('zone-bulk-move-form')?.addEventListener('submit', e => 
   const sourcePaddock = getPaddock(pendingZoneBulkMove.sourcePaddockId)
   const sourceZone = getZone(pendingZoneBulkMove.sourcePaddockId, pendingZoneBulkMove.sourceZoneId)
   const sheepToMove = state.sheep.filter(s => s.paddockId === pendingZoneBulkMove.sourcePaddockId && s.zoneId === pendingZoneBulkMove.sourceZoneId)
-  const movedNames = sheepNamesList(sheepToMove)
+  const fromLabel = `${sourcePaddock ? sourcePaddock.name : t('unknown')} / ${sourceZone ? sourceZone.name : t('unknown')}`
+  const toLabel = `${paddockName(targetPaddockId)} / ${zoneName(targetPaddockId, targetZoneId)}`
+  sheepToMove.forEach(sheep => {
+    addEvent('SHEEP_MOVED', {
+      sheep: sheep.tag,
+      from: fromLabel,
+      to: toLabel
+    })
+  })
 
   state.sheep.forEach(s => {
     if(s.paddockId === pendingZoneBulkMove.sourcePaddockId && s.zoneId === pendingZoneBulkMove.sourceZoneId){
@@ -3193,7 +4640,6 @@ document.getElementById('zone-bulk-move-form')?.addEventListener('submit', e => 
     }
   })
 
-  addHistory('schaap', t('history.sheep.moved', { sheep: movedNames, from: `${sourcePaddock ? sourcePaddock.name : t('unknown')} / ${sourceZone ? sourceZone.name : t('unknown')}`, to: `${paddockName(targetPaddockId)} / ${zoneName(targetPaddockId, targetZoneId)}` }))
   save(); render(); closeZoneBulkMoveModal()
 })
 
@@ -3234,18 +4680,14 @@ document.getElementById('sheep-list')?.addEventListener('click', e => {
   if(deleteButton){
     const sheepId = deleteButton.dataset.id
     if(!sheepId) return
-    const sheep = state.sheep.find(s => s.id === sheepId)
-    if(!sheep) return
-    openDeleteConfirm('sheep', {
-      sheepId,
-      message: t('confirm.deleteSheep'),
-      confirmLabel: t('actions.delete')
-    })
+    openSheepOutOfFlockModal(sheepId)
     return
   }
 
   const addBlock = e.target.closest('#add-sheep-block')
   if(addBlock){
+    setSheepModalDefaultSelection()
+    populateParentSheepSelects()
     openModal('sheep-modal')
   }
 })
@@ -3260,6 +4702,127 @@ document.getElementById('sheep-list')?.addEventListener('change', e => {
   sheep.birthDate = birthDateInput.value.trim() || null
   sheep.lastUpdated = Date.now()
   save(); render()
+})
+
+document.getElementById('sheep-out-list')?.addEventListener('click', e => {
+  const visibilityButton = e.target.closest('.sheep-out-visibility-button')
+  if(!visibilityButton) return
+  const sheepId = visibilityButton.dataset.id
+  if(!sheepId) return
+  const sheep = state.sheep.find(s => s.id === sheepId)
+  if(!sheep || !isOutOfFlockSheep(sheep)) return
+  sheep.outHidden = !sheep.outHidden
+  sheep.lastUpdated = Date.now()
+  save(); render()
+})
+
+document.getElementById('sheep-out-list')?.addEventListener('change', e => {
+  const outToggle = e.target.closest('#out-of-flock-show-all-toggle')
+  if(!outToggle) return
+  showAllOutOfFlockSheep = !!outToggle.checked
+  render()
+})
+
+document.getElementById('planning-list')?.addEventListener('click', e => {
+  const doneButton = e.target.closest('.planning-mark-done-button')
+  if(!doneButton) return
+  const planningId = doneButton.dataset.planningId
+  if(!planningId) return
+  markPlanningItemDone(planningId)
+})
+
+document.getElementById('planning-add-btn')?.addEventListener('click', () => {
+  openPlanningItemModal()
+})
+
+document.getElementById('planning-item-select-all-btn')?.addEventListener('click', () => {
+  toggleAllPlanningSheepSelection()
+})
+
+document.getElementById('planning-item-select-all-paddocks-btn')?.addEventListener('click', () => {
+  toggleAllPlanningCheckboxSelection('planning-item-paddock', '#planning-item-paddock-list')
+  populatePlanningZoneOptions(getSelectedPlanningPaddockIds())
+})
+
+document.getElementById('planning-item-select-all-zones-btn')?.addEventListener('click', () => {
+  toggleAllPlanningCheckboxSelection('planning-item-zone', '#planning-item-zone-list')
+})
+
+document.getElementById('planning-item-type')?.addEventListener('change', () => {
+  syncPlanningTypeVisibility()
+})
+
+document.getElementById('planning-item-paddock-list')?.addEventListener('change', e => {
+  const checkbox = e.target.closest('input[name="planning-item-paddock"]')
+  if(!checkbox) return
+  populatePlanningZoneOptions(getSelectedPlanningPaddockIds())
+})
+
+document.getElementById('planning-item-zone-list')?.addEventListener('change', e => {
+  const checkbox = e.target.closest('input[name="planning-item-zone"]')
+  if(!checkbox) return
+})
+
+document.getElementById('planning-item-modal-close')?.addEventListener('click', closePlanningItemModal)
+document.getElementById('planning-item-modal-backdrop')?.addEventListener('click', closePlanningItemModal)
+
+document.getElementById('planning-item-form')?.addEventListener('submit', e => {
+  e.preventDefault()
+  const typeInput = document.getElementById('planning-item-type')
+  const dueDateInput = document.getElementById('planning-item-date')
+  const repeatDateInput = document.getElementById('planning-item-repeat-date')
+  const detailInput = document.getElementById('planning-item-detail')
+
+  const type = normalizePlanningType(typeInput ? typeInput.value : 'custom')
+  const selectedPaddockIds = getSelectedPlanningPaddockIds()
+  const selectedSheepIds = Array.from(document.querySelectorAll('#planning-item-sheep-list input[name="planning-item-sheep"]:checked')).map(input => input.value)
+  const dueDate = dueDateInput ? dueDateInput.value.trim() : ''
+  const repeatDate = repeatDateInput ? repeatDateInput.value.trim() : ''
+  const detail = detailInput ? detailInput.value.trim() : ''
+
+  if(!dueDate) return
+
+  const locationTargets = (type === 'custom' && selectedPaddockIds.length)
+    ? selectedPaddockIds.map(paddockId => ({ paddockId, zoneId: null }))
+    : [{ paddockId: null, zoneId: null }]
+
+  const targets = selectedSheepIds.length ? selectedSheepIds : [null]
+  targets.forEach(sheepId => {
+    const sheep = sheepId ? state.sheep.find(s => s.id === sheepId) : null
+    locationTargets.forEach(location => {
+      const paddockId = location.paddockId || (sheep ? sheep.paddockId : null)
+      const zoneId = location.paddockId
+        ? (location.zoneId || null)
+        : (sheep ? (sheep.zoneId || null) : null)
+
+      const planningItem = sanitizePlanningItem({
+        id: uid(),
+        type,
+        status: 'planned',
+        dueDate,
+        repeatDate,
+        detail,
+        sheepId,
+        paddockId,
+        zoneId,
+        source: 'manual',
+        sourceKey: null,
+        createdAt: Date.now(),
+        completedAt: null
+      })
+
+      if(!planningItem) return
+      state.planningItems.push(planningItem)
+      addEvent('PLANNING_ITEM_CREATED', {
+        planningId: planningItem.id,
+        type,
+        dueDate,
+        sheepTag: sheep ? sheep.tag : null
+      })
+    })
+  })
+
+  save(); render(); closePlanningItemModal()
 })
 
 document.getElementById('paddock-list').addEventListener('click', e => {
@@ -3434,8 +4997,15 @@ document.getElementById('zone-modal-form')?.addEventListener('submit', e => {
   if(!zoneName || !paddockId) return
   const paddock = getPaddock(paddockId)
   if(!paddock) return
-  paddock.zones.push({id:uid(),name:zoneName,area,perimeter,notes,emptySince: Date.now()})
-  addHistory('zone', t('history.zone.added', { name: zoneName, paddock: paddock.name }))
+  const zoneId = uid()
+  paddock.zones.push({id:zoneId,name:zoneName,area,perimeter,notes,emptySince: Date.now()})
+  addEvent('ZONE_CREATED', {
+    zoneId,
+    paddockId,
+    name: zoneName,
+    area,
+    perimeter
+  })
   document.getElementById('zone-modal-notes').value = ''
   save(); render(); closeModal('zone-modal')
 })
