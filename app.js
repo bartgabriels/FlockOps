@@ -242,6 +242,7 @@ const translations = {
     'history.shearing.sheep': 'Scheren geregistreerd voor {sheep} op {date}',
     'labels.age': 'Leeftijd: {age}',
     'labels.ageYearsMonths': '{years} jr {months} mnd',
+    'labels.ageMonthsDays': '{months} mnd ({days} dagen)',
     'labels.birthDate': 'Geboortedatum: {date}',
     'labels.lastShearing': 'Laatste scheerbeurt: {value}',
     'labels.lastInjection': 'Laatste injectie: {value}',
@@ -532,6 +533,7 @@ const translations = {
     'history.shearing.sheep': 'Shearing registered for {sheep} on {date}',
     'labels.age': 'Age: {age}',
     'labels.ageYearsMonths': '{years} y {months} m',
+    'labels.ageMonthsDays': '{months} m ({days} days)',
     'labels.birthDate': 'Birth date: {date}',
     'labels.lastShearing': 'Last shearing: {value}',
     'labels.lastInjection': 'Last injection: {value}',
@@ -825,6 +827,7 @@ const translationsFr = {
   'history.shearing.sheep': 'Tonte enregistrée pour {sheep} le {date}',
   'labels.age': 'Âge : {age}',
   'labels.ageYearsMonths': '{years} a {months} m',
+  'labels.ageMonthsDays': '{months} m ({days} jours)',
   'labels.birthDate': 'Date de naissance : {date}',
   'labels.lastShearing': 'Dernière tonte : {value}',
   'labels.lastInjection': 'Dernière injection : {value}',
@@ -1869,6 +1872,13 @@ function formatAge(dateString){
   if(years < 0){
     years = 0
     months = 0
+  }
+
+  if(years === 0 && months < 6){
+    const start = new Date(birthDate.getFullYear(), birthDate.getMonth(), birthDate.getDate())
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const days = Math.max(0, Math.floor((end.getTime() - start.getTime()) / 86400000))
+    return t('labels.ageMonthsDays', { months, days })
   }
 
   return t('labels.ageYearsMonths', { years, months })
