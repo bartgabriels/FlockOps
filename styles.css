@@ -1,4 +1,4 @@
-:root{--bg:#F7FAF8;--card:#FFFFFF;--surface-muted:#EEF4F1;--surface-soft:#E8F0EC;--accent:#0B6E4F;--accent-hover:#09563E;--secondary:#2F5D8A;--info:#2F5D8A;--success:#1F7A8C;--warning:#A05A00;--error:#8B2C3F;--text-primary:#1B2421;--text-secondary:#4A5A53;--border:#C9D8D0;--border-strong:#AFC4B9;--chip-bg:#EAF4F0;--chip-text:#23483A;--metric-bg:#EDF2F7;--metric-text:#334155;--focus:#5AA9E6;--text-outline:0 0 1px rgba(255,255,255,0.85),0 0 2px rgba(255,255,255,0.65),-1px -1px 1px rgba(255,255,255,0.5),1px -1px 1px rgba(255,255,255,0.5),-1px 1px 1px rgba(255,255,255,0.5),1px 1px 1px rgba(255,255,255,0.5)}
+﻿:root{--bg:#F7FAF8;--card:#FFFFFF;--surface-muted:#EEF4F1;--surface-soft:#E8F0EC;--accent:#0B6E4F;--accent-hover:#09563E;--secondary:#2F5D8A;--info:#2F5D8A;--success:#1F7A8C;--warning:#A05A00;--error:#8B2C3F;--text-primary:#1B2421;--text-secondary:#4A5A53;--border:#C9D8D0;--border-strong:#AFC4B9;--chip-bg:#EAF4F0;--chip-text:#23483A;--metric-bg:#EDF2F7;--metric-text:#334155;--focus:#5AA9E6;--text-outline:0 0 1px rgba(255,255,255,0.85),0 0 2px rgba(255,255,255,0.65),-1px -1px 1px rgba(255,255,255,0.5),1px -1px 1px rgba(255,255,255,0.5),-1px 1px 1px rgba(255,255,255,0.5),1px 1px 1px rgba(255,255,255,0.5)}
 
 html{
   overflow-x:hidden;
@@ -551,16 +551,7 @@ button.add-zone-button:hover {
   border:1px solid rgba(0,0,0,0.12);
 }
 
-.paddock-metric{
-  color:var(--metric-text);
-  font-size:0.75rem;
-  background:var(--metric-bg);
-  border:1px solid var(--border);
-  border-radius:999px;
-  padding:1px 7px;
-  white-space:nowrap;
-}
-
+.paddock-metric,
 .paddock-sheep-count{
   color:var(--metric-text);
   font-size:0.75rem;
@@ -571,34 +562,7 @@ button.add-zone-button:hover {
   white-space:nowrap;
 }
 
-.paddock-delete-button{
-  width:24px;
-  height:24px;
-  border-radius:50%;
-  border:none;
-  background:var(--chip-bg);
-  color:var(--chip-text);
-  font-size:1rem;
-  line-height:1;
-  cursor:pointer;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  padding:0;
-}
-
-.paddock-delete-button .button-icon,
-.zone-item .zone-delete-button .button-icon,
-.sheep-delete-button .button-icon{
-  width:0.95em;
-  height:0.95em;
-}
-
-.paddock-delete-button:hover{
-  background:#D8EAE2;
-}
-
-.paddock-edit-button{
+.paddock-icon-button{
   width:24px;
   height:24px;
   border-radius:50%;
@@ -615,52 +579,19 @@ button.add-zone-button:hover {
   flex-shrink:0;
 }
 
-.paddock-edit-button:hover{
+.paddock-icon-button:hover,
+.paddock-delete-button:hover,
+.paddock-edit-button:hover,
+.paddock-injection-button:hover,
+.paddock-shearing-button:hover,
+.paddock-collapse-button:hover{
   background:#D8EAE2;
 }
 
-.paddock-injection-button{
-  width:24px;
-  height:24px;
-  border-radius:50%;
-  border:none;
-  background:var(--chip-bg);
-  color:var(--chip-text);
-  font-size:0.9rem;
-  line-height:1;
-  cursor:pointer;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  padding:0;
-  flex-shrink:0;
-}
-
-.paddock-injection-button:hover{
-  background:#D8EAE2;
-}
-
-.paddock-shearing-button{
-  width:24px;
-  height:24px;
-  border-radius:50%;
-  border:none;
-  background:var(--chip-bg);
-  color:var(--chip-text);
-  font-size:0.9rem;
-  line-height:1;
-  cursor:pointer;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  padding:0;
-  flex-shrink:0;
-}
-
-.paddock-shearing-button:hover{
-  background:#D8EAE2;
-}
-
+.paddock-delete-button,
+.paddock-edit-button,
+.paddock-injection-button,
+.paddock-shearing-button,
 .paddock-collapse-button{
   width:24px;
   height:24px;
@@ -668,8 +599,7 @@ button.add-zone-button:hover {
   border:none;
   background:var(--chip-bg);
   color:var(--chip-text);
-  font-size:0.95rem;
-  font-weight:700;
+  font-size:0.9rem;
   line-height:1;
   cursor:pointer;
   display:inline-flex;
@@ -679,8 +609,16 @@ button.add-zone-button:hover {
   flex-shrink:0;
 }
 
-.paddock-collapse-button:hover{
-  background:#D8EAE2;
+.paddock-collapse-button{
+  font-size:0.95rem;
+  font-weight:700;
+}
+
+.paddock-delete-button .button-icon,
+.zone-item .zone-delete-button .button-icon,
+.sheep-delete-button .button-icon{
+  width:0.95em;
+  height:0.95em;
 }
 
 .card-header strong{
@@ -785,11 +723,7 @@ button.add-zone-button:hover {
   background:rgba(255,255,255,1);
 }
 
-.stall-zone-item{
-  background:#f4f8f4 url('stal.png') no-repeat bottom center;
-  background-size:cover;
-}
-
+.stall-zone-item,
 .zone-list .add-zone-button.stall-zone-item{
   background:#f4f8f4 url('stal.png') no-repeat bottom center;
   background-size:cover;
@@ -1537,6 +1471,10 @@ form button{
 .sheep-shearing-button:hover,
 .move-button:hover{background:#DBE8F7}
 
+.sheep-delete-button{
+  background:#DBE8F7;
+}
+
 .history-list{
   display:flex;
   flex-direction:column;
@@ -1780,9 +1718,7 @@ form button{
   font-size:0.85rem;
 }
 
-.sheep-delete-button,
-.sheep-injection-button,
-.sheep-shearing-button{
+.sheep-delete-button{
   background:#E6EEF8;
   color:#234A75;
   border:1px solid #BFD3EA;
@@ -1799,9 +1735,7 @@ form button{
   max-width:none;
 }
 
-.sheep-delete-button:hover{
-  background:#DBE8F7;
-}
+.sheep-delete-button:hover{background:#DBE8F7}
 
 .delete-confirm-panel{
   max-width:360px;
