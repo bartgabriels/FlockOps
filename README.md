@@ -1,6 +1,14 @@
 # FlockOps
 
-FlockOps is a sheep management web app for paddocks and zones, with optional cloud sync via login.
+FlockOps is a sheep management SaaS web app for paddocks and zones.
+
+Important:
+- FlockOps is provided as a SaaS application.
+- End users do not need to install or run a backend.
+- The app now requires authentication before use.
+- After successful authentication, the app can still be used offline.
+- While offline, cloud sync is not possible.
+- Offline changes may be overwritten later and can lead to data loss.
 
 ---
 
@@ -9,7 +17,15 @@ FlockOps is a sheep management web app for paddocks and zones, with optional clo
 ### Overzicht
 
 FlockOps is een webapp voor schapenbeheer per weide en zone.
-De frontend draait in de browser (HTML/CSS/JavaScript) en kan lokaal werken, maar ondersteunt ook cloud-opslag met login.
+De frontend draait in de browser (HTML/CSS/JavaScript).
+
+Belangrijk:
+- FlockOps is een SaaS-app.
+- Eindgebruikers moeten zelf geen backend installeren of draaien.
+- De app werkt niet meer zonder login.
+- Na succesvolle authenticatie kan je wel offline blijven werken.
+- Tijdens offline gebruik kan er niet met de cloud gesynchroniseerd worden.
+- Offline wijzigingen kunnen later overschreven worden en dataverlies veroorzaken.
 
 ### Belangrijkste functies
 
@@ -27,8 +43,13 @@ De frontend draait in de browser (HTML/CSS/JavaScript) en kan lokaal werken, maa
 
 - Registratie en login met e-mail + wachtwoord
 - E-mail is uniek
+- De app is pas bruikbaar na authenticatie
 - Na login wordt cloud-state opgehaald
-- Wijzigingen worden automatisch naar de cloud gesynchroniseerd
+- Wijzigingen worden automatisch naar de cloud gesynchroniseerd zolang er verbinding is
+- Bij offline gebruik na authenticatie:
+  - Je kan verder werken met lokale data
+  - Cloud sync is niet beschikbaar
+  - Er is risico op dataverlies van offline wijzigingen
 - Bij afmelden:
   - Eerst nog een laatste sync naar de database
   - Daarna lokale browser-opslag van de app leegmaken
@@ -72,7 +93,9 @@ Geen build-stap nodig.
 1. Open index.html in een moderne browser.
 2. Of gebruik de gehoste versie: https://bartgabriels.github.io/FlockOps/
 
-### Backend starten (optioneel, voor cloud sync)
+### Backend starten (alleen voor lokale development/self-hosting)
+
+Voor normaal gebruik van de SaaS-versie is dit niet nodig.
 
 Vereisten:
 - Node.js 18+
@@ -122,7 +145,15 @@ npm start
 ### Overview
 
 FlockOps is a web app for sheep management across paddocks and zones.
-The frontend runs in the browser (HTML/CSS/JavaScript) and can run locally, with optional cloud storage through login.
+The frontend runs in the browser (HTML/CSS/JavaScript).
+
+Important:
+- FlockOps is a SaaS app.
+- End users do not need to install or run a backend.
+- The app no longer works without login.
+- After successful authentication, you can keep working offline.
+- While offline, cloud sync is unavailable.
+- Offline changes can be overwritten later and may cause data loss.
 
 ### Main features
 
@@ -140,8 +171,13 @@ The frontend runs in the browser (HTML/CSS/JavaScript) and can run locally, with
 
 - Register and sign in with email + password
 - Email must be unique
+- The app is only usable after authentication
 - Cloud state is fetched after login
-- Changes are auto-synced to cloud
+- Changes are auto-synced to cloud while connected
+- When working offline after authentication:
+  - You can continue with local data
+  - Cloud sync is unavailable
+  - Offline changes may be lost later
 - On logout:
   - One final sync is sent to the database
   - Local browser storage for app keys is cleared
@@ -191,7 +227,9 @@ No build step is required.
 1. Open index.html in a modern browser.
 2. Or use the hosted version: https://bartgabriels.github.io/FlockOps/
 
-### Run backend (optional, for cloud sync)
+### Run backend (only for local development/self-hosting)
+
+You do not need this to use the hosted SaaS app.
 
 Requirements:
 - Node.js 18+
@@ -241,7 +279,15 @@ npm start
 ### Vue d'ensemble
 
 FlockOps est une application web pour la gestion des moutons par paturage et zone.
-Le frontend tourne dans le navigateur (HTML/CSS/JavaScript), avec mode local et stockage cloud optionnel via connexion.
+Le frontend tourne dans le navigateur (HTML/CSS/JavaScript).
+
+Important:
+- FlockOps est une application SaaS.
+- Les utilisateurs finaux n'ont pas besoin d'installer ni d'executer un backend.
+- L'application ne fonctionne plus sans connexion.
+- Apres authentification, vous pouvez continuer a travailler hors ligne.
+- Hors ligne, la synchro cloud est indisponible.
+- Les changements hors ligne peuvent etre ecrases plus tard et provoquer une perte de donnees.
 
 ### Fonctions principales
 
@@ -259,8 +305,13 @@ Le frontend tourne dans le navigateur (HTML/CSS/JavaScript), avec mode local et 
 
 - Inscription et connexion avec e-mail + mot de passe
 - E-mail unique
+- L'application est utilisable seulement apres authentification
 - L'etat cloud est charge apres connexion
-- Les changements sont synchronises automatiquement
+- Les changements sont synchronises automatiquement tant que la connexion est disponible
+- En mode hors ligne apres authentification:
+  - Vous pouvez continuer avec les donnees locales
+  - La synchro cloud est indisponible
+  - Il y a un risque de perte de donnees sur les changements hors ligne
 - A la deconnexion:
   - Une derniere synchro est envoyee a la base de donnees
   - Le stockage local navigateur des cles applicatives est vide
@@ -304,7 +355,9 @@ Pas de build requis.
 1. Ouvrir index.html dans un navigateur moderne.
 2. Ou utiliser la version hebergee: https://bartgabriels.github.io/FlockOps/
 
-### Lancer le backend (optionnel, pour synchro cloud)
+### Lancer le backend (seulement pour dev local/self-hosting)
+
+Ce n'est pas necessaire pour utiliser la version SaaS hebergee.
 
 Pre-requis:
 - Node.js 18+
