@@ -123,6 +123,25 @@ function normalizeTab(tab){
   return VALID_TABS.has(tab) ? tab : DEFAULT_TAB
 }
 
+function persistActiveTabToStoredConfig(tab){
+  const nextTab = normalizeTab(tab)
+  try {
+    const raw = localStorage.getItem(KEY)
+    const parsed = raw ? JSON.parse(raw) : {}
+    const nextState = parsed && typeof parsed === 'object' ? parsed : {}
+    const nextSettings = nextState.settings && typeof nextState.settings === 'object'
+      ? nextState.settings
+      : {}
+    nextState.settings = {
+      ...nextSettings,
+      activeTab: nextTab
+    }
+    localStorage.setItem(KEY, JSON.stringify(nextState))
+  } catch (error) {
+    console.warn('Could not persist active tab directly to config')
+  }
+}
+
 let currentLang = (() => {
   try {
     const urlLang = new URLSearchParams(window.location.search).get('lang')
@@ -1198,6 +1217,7 @@ function initTabs(){
     })
 
     if(persist){
+      persistActiveTabToStoredConfig(nextTab)
       save()
     }
   }

@@ -40,7 +40,7 @@ form button,
   padding:8px;
   margin:0 auto;
   overflow-x:hidden;
-  overflow-y:auto;
+  overflow-y:visible;
 }
 
 .top-bar{
