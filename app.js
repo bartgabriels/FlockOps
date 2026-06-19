@@ -1402,9 +1402,7 @@ function renderPaddockWeather(paddock, isVisible){
     return `<div class="paddock-weather paddock-weather-error${visibilityClass}">${t('weather.noForecast', { postcode: postcodeKey })}</div>`
   }
 
-  const alerts = hasActiveSheepInPaddock(paddock.id)
-    ? buildWeatherAlerts(cached.days)
-    : []
+  const alerts = buildWeatherAlerts(cached.days)
   const alertsHtml = alerts.length
     ? `<div class="weather-alerts"><strong>${t('weather.alerts')}</strong>${alerts.map(alert => `<span class="weather-alert weather-alert--${alert.type}">${alert.text}</span>`).join('')}</div>`
     : ''
