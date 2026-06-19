@@ -320,7 +320,7 @@ const TRANSLATION_ROWS = {
   'auth.mode.login': ['Log in', 'Aanmelden', 'Connexion'],
   'auth.toggle.loginRegister': ['Log in / Register', 'Inloggen / Registreren', 'Connexion / Inscription'],
   'auth.toggle.logout': ['Log out', 'Afmelden', 'Déconnexion'],
-  'auth.status.loggingIn': ['Logging in...', 'Inloggen...', 'Connexion...'],
+  'auth.status.loggingIn': ['Logging in... (This may take a moment. We are gathering your sheep)', 'Inloggen... (Dit kan even duren. We verzamelen je schapen)', 'Connexion... (Cela peut prendre un moment. Nous rassemblons vos moutons)'],
   'auth.status.loggedIn': ['Logged in', 'Ingelogd', 'Connecté'],
   'auth.status.registering': ['Creating account...', 'Account maken...', 'Création du compte...'],
   'auth.status.registered': ['Account created', 'Account aangemaakt', 'Compte créé'],
