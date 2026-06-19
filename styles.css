@@ -1147,8 +1147,7 @@ form button{
 }
 
 .pedigree-tree-wrap--full{
-  overflow:auto;
-  max-height:72vh;
+  overflow:hidden;
 }
 
 .pedigree-tree-svg{
