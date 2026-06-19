@@ -263,6 +263,36 @@
     </div>
   </div>
 
+  <div id="planning-attention-modal" class="modal hidden" aria-hidden="true">
+    <div id="planning-attention-modal-backdrop" class="modal-backdrop"></div>
+    <div class="modal-panel">
+      <button type="button" id="planning-attention-modal-close" class="modal-close">✕</button>
+      <h2 id="planning-attention-modal-title">Markeer uitgevoerd</h2>
+      <div class="modal-field">
+        <label id="planning-attention-modal-paddock-label">Weide</label>
+        <div id="planning-attention-modal-paddock">-</div>
+      </div>
+      <div class="modal-field">
+        <label id="planning-attention-modal-alerts-label">Aandachtspunten</label>
+        <div id="planning-attention-modal-alerts">-</div>
+      </div>
+      <form id="planning-attention-modal-form" class="group-form">
+        <div class="modal-field">
+          <label id="planning-attention-modal-date-label" for="planning-attention-modal-date">Uitvoerdatum</label>
+          <input id="planning-attention-modal-date" type="date" required>
+        </div>
+        <div class="modal-field">
+          <label id="planning-attention-modal-comment-label" for="planning-attention-modal-comment">Algemene commentaar</label>
+          <textarea id="planning-attention-modal-comment" rows="4"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="planning-attention-modal-cancel">Annuleren</button>
+          <button type="submit" id="planning-attention-modal-submit" class="icon-button"></button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div id="paddock-modal" class="modal hidden" aria-hidden="true">
     <div id="paddock-modal-backdrop" class="modal-backdrop"></div>
     <div class="modal-panel">

@@ -6,6 +6,8 @@ const AUTH_USERNAME_KEY = 'flockops:authUsername'
 const API_BASE = window.FLOCKOPS_API_BASE || 'https://flockops-hfyo.onrender.com'
 const FEEDBACK_ENDPOINT = window.FLOCKOPS_FEEDBACK_ENDPOINT || 'https://formsubmit.co/ajax/bart@weverstraat9.be'
 const DEFAULT_LANGUAGE = 'nl'
+const DEFAULT_TAB = 'paddocks'
+const VALID_TABS = new Set(['paddocks', 'sheep', 'history', 'planning', 'pedigree', 'billing'])
 const state = {
   paddocks: [],
   sheep: [],
@@ -14,7 +16,8 @@ const state = {
   planningItems: [],
   settings: {
     showAllOutOfFlockSheep: true,
-    language: DEFAULT_LANGUAGE
+    language: DEFAULT_LANGUAGE,
+    activeTab: DEFAULT_TAB
   }
 }
 const collapsedPaddockIds = new Set()
@@ -39,10 +42,13 @@ let pendingInjectionSheepId = null
 let pendingShearingSheepId = null
 let pendingPlanningItemId = null
 let pendingOutOfFlockSheepId = null
+let pendingAttentionExecution = null
 let hasTriggeredExitDownload = false
 let reopenEmptyStorageModalAfterUpload = false
 let hasInitializedPlanningFilters = false
 let showAllOutOfFlockSheep = true
+let activeTab = DEFAULT_TAB
+let setActiveTabHandler = null
 const MIN_SHEEP_BIRTH_DATE = '2000-01-01'
 let authToken = null
 let authUsername = null
@@ -111,6 +117,10 @@ if(!window.FLOCKOPS_TRANSLATIONS){
 
 function normalizeLanguage(lang){
   return translations[lang] ? lang : DEFAULT_LANGUAGE
+}
+
+function normalizeTab(tab){
+  return VALID_TABS.has(tab) ? tab : DEFAULT_TAB
 }
 
 let currentLang = (() => {
@@ -306,7 +316,8 @@ function cloudStatePayload(){
     planningItems: state.planningItems.filter(item => item && item.source === 'manual'),
     settings: {
       ...(state.settings || {}),
-      showAllOutOfFlockSheep: !!showAllOutOfFlockSheep
+      showAllOutOfFlockSheep: !!showAllOutOfFlockSheep,
+      activeTab: normalizeTab(activeTab)
     }
   }
 }
@@ -608,6 +619,11 @@ function isOutOfFlockSheep(sheep){
 
 function isActiveFlockSheep(sheep){
   return sheep && sheep.flockStatus !== 'out'
+}
+
+function hasActiveSheepInPaddock(paddockId){
+  if(!paddockId) return false
+  return state.sheep.some(sheep => isActiveFlockSheep(sheep) && sheep.paddockId === paddockId)
 }
 
 function outReasonLabel(reason){
@@ -920,7 +936,14 @@ function applyStaticTranslations(){
   setText('planning-item-select-all-zones-btn', t('planning.add.selectAllZones'))
   setText('planning-item-date-label', t('planning.add.date'))
   setText('planning-item-detail-label', t('planning.add.detail'))
+  setText('planning-attention-modal-title', t('planning.attention.modal.title'))
+  setText('planning-attention-modal-paddock-label', t('planning.attention.modal.paddock'))
+  setText('planning-attention-modal-alerts-label', t('planning.attention.modal.alerts'))
+  setText('planning-attention-modal-date-label', t('planning.attention.modal.date'))
+  setText('planning-attention-modal-comment-label', t('planning.attention.commentLabel'))
+  setText('planning-attention-modal-cancel', t('planning.attention.modal.cancel'))
   setPlaceholder('planning-item-detail', t('planning.add.detailPlaceholder'))
+  setPlaceholder('planning-attention-modal-comment', t('planning.attention.modal.commentPlaceholder'))
   setPlaceholder('auth-email', t('auth.emailPlaceholder'))
   setPlaceholder('auth-password', t('auth.passwordPlaceholder'))
   setPlaceholder('auth-password-confirm', t('auth.passwordConfirmPlaceholder'))
@@ -928,6 +951,7 @@ function applyStaticTranslations(){
   setPlaceholder('feedback-email', t('feedback.emailPlaceholder'))
   setPlaceholder('feedback-message', t('feedback.messagePlaceholder'))
   setIconButton('planning-item-submit', t('ui.add'))
+  setIconButton('planning-attention-modal-submit', t('ui.save'))
   updateAuthUi()
   syncAuthRegisterValidation(false)
 
@@ -1154,8 +1178,14 @@ function initTabs(){
   }
   if(!tabButtons.length || !panels.paddocks || !panels.sheep || !panels.history || !panels.planning || !panels.pedigree || !panels.billing) return
 
-  const setActiveTab = (tab) => {
+  const setActiveTab = (tab, persist = false) => {
     const nextTab = panels[tab] ? tab : 'paddocks'
+    activeTab = nextTab
+    if(!state.settings || typeof state.settings !== 'object'){
+      state.settings = { language: currentLang, showAllOutOfFlockSheep: !!showAllOutOfFlockSheep, activeTab: nextTab }
+    } else {
+      state.settings.activeTab = nextTab
+    }
 
     Object.entries(panels).forEach(([name, panel]) => {
       panel.classList.toggle('hidden', name !== nextTab)
@@ -1166,23 +1196,29 @@ function initTabs(){
       btn.classList.toggle('is-active', active)
       btn.setAttribute('aria-selected', active ? 'true' : 'false')
     })
+
+    if(persist){
+      save()
+    }
   }
 
+  setActiveTabHandler = setActiveTab
+
   tabButtons.forEach(btn => {
-    btn.addEventListener('click', () => setActiveTab(btn.dataset.tab))
+    btn.addEventListener('click', () => setActiveTab(btn.dataset.tab, true))
   })
 
   const appTitle = document.getElementById('app-title')
   if(appTitle){
-    appTitle.addEventListener('click', () => setActiveTab('billing'))
+    appTitle.addEventListener('click', () => setActiveTab('billing', true))
     appTitle.addEventListener('keydown', (event) => {
       if(event.key !== 'Enter' && event.key !== ' ') return
       event.preventDefault()
-      setActiveTab('billing')
+      setActiveTab('billing', true)
     })
   }
 
-  setActiveTab('paddocks')
+  setActiveTab(activeTab, false)
 }
 
 function detectPostcodeCountry(postcode){
@@ -1202,6 +1238,52 @@ function weatherLabel(code){
   if((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) return t('weather.snow')
   if(code >= 95) return t('weather.thunderstorm')
   return t('weather.variable')
+}
+
+function windDirectionLabel(degrees){
+  if(!Number.isFinite(degrees)) return '-'
+  const normalized = ((degrees % 360) + 360) % 360
+  const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
+  const index = Math.round(normalized / 45) % directions.length
+  return directions[index]
+}
+
+function buildWeatherAlerts(days){
+  if(!Array.isArray(days) || !days.length) return []
+
+  const alerts = []
+  const hasStorm = days.some(day => Number.isFinite(day.weatherCode) && day.weatherCode >= 95)
+  const heavyRainDay = days.find(day => (
+    Number.isFinite(day.rain)
+    && Number.isFinite(day.precipitationMm)
+    && day.rain >= 80
+    && day.precipitationMm >= 5
+  ))
+  const frostDay = days.find(day => Number.isFinite(day.min) && day.min <= 0)
+  const heatDay = days.find(day => Number.isFinite(day.max) && day.max >= 30)
+  const strongWindDay = days.find(day => Number.isFinite(day.windMax) && day.windMax >= 50)
+  const strongGustDay = days.find(day => Number.isFinite(day.windGustMax) && day.windGustMax >= 75)
+
+  if(hasStorm){
+    alerts.push({ type: 'storm', text: t('weather.alertStorm') })
+  }
+  if(heavyRainDay){
+    alerts.push({ type: 'rain', text: t('weather.alertHeavyRain', { rain: heavyRainDay.rain, mm: heavyRainDay.precipitationMm }) })
+  }
+  if(frostDay){
+    alerts.push({ type: 'frost', text: t('weather.alertFrost', { temp: frostDay.min }) })
+  }
+  if(heatDay){
+    alerts.push({ type: 'heat', text: t('weather.alertHeat', { temp: heatDay.max }) })
+  }
+  if(strongWindDay){
+    alerts.push({ type: 'wind', text: t('weather.alertStrongWind', { wind: strongWindDay.windMax }) })
+  }
+  if(strongGustDay){
+    alerts.push({ type: 'wind', text: t('weather.alertStrongGust', { gust: strongGustDay.windGustMax }) })
+  }
+
+  return alerts
 }
 
 function formatForecastDay(dateString){
@@ -1262,7 +1344,7 @@ async function loadWeatherForPostcode(postcode){
   weatherLoading.add(postcode)
   try {
     const coords = await resolveCoordinatesByPostcode(postcode)
-    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=3`
+    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,windspeed_10m_max,windgusts_10m_max,winddirection_10m_dominant&timezone=auto&forecast_days=3`
     const forecast = await fetchJson(weatherUrl)
     const daily = forecast.daily || {}
     const times = Array.isArray(daily.time) ? daily.time.slice(0, 3) : []
@@ -1271,7 +1353,11 @@ async function loadWeatherForPostcode(postcode){
       weatherCode: Number(daily.weathercode?.[i]),
       max: Math.round(Number(daily.temperature_2m_max?.[i] ?? 0)),
       min: Math.round(Number(daily.temperature_2m_min?.[i] ?? 0)),
-      rain: Math.round(Number(daily.precipitation_probability_max?.[i] ?? 0))
+      rain: Math.round(Number(daily.precipitation_probability_max?.[i] ?? 0)),
+      precipitationMm: Math.round(Number(daily.precipitation_sum?.[i] ?? 0) * 10) / 10,
+      windMax: Math.round(Number(daily.windspeed_10m_max?.[i] ?? 0)),
+      windGustMax: Math.round(Number(daily.windgusts_10m_max?.[i] ?? 0)),
+      windDirection: windDirectionLabel(Number(daily.winddirection_10m_dominant?.[i]))
     }))
 
     if(!days.length) throw new Error(t('alert.forecastDataMissing'))
@@ -1316,10 +1402,17 @@ function renderPaddockWeather(paddock, isVisible){
     return `<div class="paddock-weather paddock-weather-error${visibilityClass}">${t('weather.noForecast', { postcode: postcodeKey })}</div>`
   }
 
-  return `<div class="paddock-weather${visibilityClass}">${cached.days.map(day => {
+  const alerts = hasActiveSheepInPaddock(paddock.id)
+    ? buildWeatherAlerts(cached.days)
+    : []
+  const alertsHtml = alerts.length
+    ? `<div class="weather-alerts"><strong>${t('weather.alerts')}</strong>${alerts.map(alert => `<span class="weather-alert weather-alert--${alert.type}">${alert.text}</span>`).join('')}</div>`
+    : ''
+
+  return `<div class="paddock-weather${visibilityClass}">${alertsHtml}${cached.days.map(day => {
     const dayText = day.date ? formatForecastDay(day.date) : (day.day || '')
     const labelText = Number.isFinite(day.weatherCode) ? weatherLabel(day.weatherCode) : (day.label || '')
-    return `<div class="weather-day"><strong>${dayText}</strong><small>${labelText}</small><small>${day.max}° / ${day.min}°</small><small>${t('weather.rainPercentage', { rain: day.rain })}</small></div>`
+    return `<div class="weather-day"><strong>${dayText} - ${labelText}</strong><small>${day.max}° / ${day.min}°</small><small>${t('weather.rainPercentage', { rain: day.rain, mm: day.precipitationMm })}</small><small>${t('weather.windSummary', { wind: day.windMax, gust: day.windGustMax, dir: day.windDirection })}</small></div>`
   }).join('')}</div>`
 }
 
@@ -1337,14 +1430,20 @@ function ensureDefaultStal(){
 
 function hydrateState(saved){
   const settingsLanguage = normalizeLanguage(saved?.settings?.language)
+  const settingsActiveTab = normalizeTab(saved?.settings?.activeTab)
   state.settings = {
     showAllOutOfFlockSheep: saved?.settings?.showAllOutOfFlockSheep !== undefined
       ? !!saved.settings.showAllOutOfFlockSheep
       : true,
-    language: settingsLanguage
+    language: settingsLanguage,
+    activeTab: settingsActiveTab
   }
   showAllOutOfFlockSheep = state.settings.showAllOutOfFlockSheep
+  activeTab = settingsActiveTab
   currentLang = settingsLanguage
+  if(typeof setActiveTabHandler === 'function'){
+    setActiveTabHandler(activeTab, false)
+  }
   try {
     localStorage.setItem(LANG_KEY, currentLang)
   } catch (error) {
@@ -1470,10 +1569,15 @@ function resetStateToDefaultConfig(){
   state.planningItems = []
   state.settings = {
     showAllOutOfFlockSheep: true,
-    language: DEFAULT_LANGUAGE
+    language: DEFAULT_LANGUAGE,
+    activeTab: DEFAULT_TAB
   }
   showAllOutOfFlockSheep = true
+  activeTab = DEFAULT_TAB
   currentLang = DEFAULT_LANGUAGE
+  if(typeof setActiveTabHandler === 'function'){
+    setActiveTabHandler(activeTab, false)
+  }
   try {
     localStorage.setItem(LANG_KEY, currentLang)
   } catch (error) {
@@ -1546,6 +1650,15 @@ function todayIso(){
 function oneYearFromTodayIso(){
   const date = new Date()
   date.setFullYear(date.getFullYear() + 1)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function shiftIsoDate(isoDate, dayOffset){
+  const date = new Date(`${isoDate}T12:00:00`)
+  date.setDate(date.getDate() + dayOffset)
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
@@ -2435,11 +2548,24 @@ function filterPlanningEntries(entries){
   const periodFilter = document.getElementById('planning-filter-period')?.value || 'all'
   const paddockFilter = document.getElementById('planning-filter-paddock')?.value || 'all'
   const sheepFilter = document.getElementById('planning-filter-sheep')?.value || 'all'
+  const today = todayIso()
 
   let filtered = [...entries]
 
+  filtered = filtered.filter(item => {
+    if(item.status === 'planned') return true
+    if(item.status !== 'done') return false
+    const dateValue = planningDateField(item)
+    return !!dateValue && dateValue >= today
+  })
+
   if(periodFilter !== 'all'){
-    filtered = filtered.filter(item => isWithinPeriod(planningDateField(item), periodFilter))
+    filtered = filtered.filter(item => {
+      const dateValue = planningDateField(item)
+      if(!dateValue) return false
+      if(item.status === 'planned' && dateValue < today) return true
+      return isWithinPeriod(dateValue, periodFilter)
+    })
   }
 
   if(paddockFilter !== 'all'){
@@ -2478,27 +2604,188 @@ function syncPlanningFilterOptions(allEntries){
   sheepFilter.value = sheepIds.has(selectedSheep) ? selectedSheep : 'all'
 }
 
-function renderPlanning(){
-  const planningList = document.getElementById('planning-list')
-  if(!planningList) return
+function collectPlanningWeatherAttentionItems(){
+  return state.paddocks
+    .map(paddock => {
+      if(!hasActiveSheepInPaddock(paddock.id)) return null
 
-  const allEntries = collectPlanningEntries()
-  syncPlanningFilterOptions(allEntries)
-  const filteredEntries = filterPlanningEntries(allEntries)
+      const rawPostcode = (paddock.postcode || '').trim()
+      if(!rawPostcode) return null
 
-  if(!filteredEntries.length){
-    planningList.innerHTML = `<div class="empty">${t('planning.empty')}</div>`
-    return
+      const postcodeKey = rawPostcode.toUpperCase()
+      const cached = weatherCache[postcodeKey]
+      const isFresh = !!cached && (Date.now() - cached.fetchedAt) < WEATHER_TTL_MS
+
+      if((!cached || !isFresh) && !weatherLoading.has(postcodeKey)){
+        loadWeatherForPostcode(postcodeKey)
+      }
+
+      if(!cached || !isFresh || cached.error) return null
+
+      const alerts = buildWeatherAlerts(cached.days)
+      if(!alerts.length) return null
+
+      return {
+        paddockId: paddock.id,
+        paddockName: paddock.name,
+        postcode: rawPostcode,
+        alerts
+      }
+    })
+    .filter(Boolean)
+}
+
+function attentionActionSuggestionsForAlert(alertType){
+  const unique = new Map()
+  const append = (key) => {
+    if(unique.has(key)) return
+    unique.set(key, { key, text: t(`planning.attention.action.${key}`) })
   }
 
+  if(alertType === 'rain'){
+    append('drainage')
+    append('stable')
+  }
+  if(alertType === 'heat'){
+    append('water')
+    append('shade')
+  }
+  if(alertType === 'frost'){
+    append('stable')
+    append('waterCheck')
+  }
+  if(alertType === 'storm'){
+    append('stable')
+    append('fences')
+  }
+  if(alertType === 'wind'){
+    append('fences')
+    append('shelter')
+  }
+
+  if(!unique.size){
+    append('monitor')
+  }
+
+  return Array.from(unique.values())
+}
+
+function attentionActionSuggestionsForAlerts(alerts){
+  const unique = new Map()
+  alerts.forEach(alert => {
+    attentionActionSuggestionsForAlert(alert.type).forEach(action => {
+      if(unique.has(action.key)) return
+      unique.set(action.key, action.text)
+    })
+  })
+  if(!unique.size){
+    unique.set('monitor', t('planning.attention.action.monitor'))
+  }
+  return Array.from(unique.values())
+}
+
+function attentionPlanningSourceKey(paddockId, date){
+  return `attention:${date}:${paddockId || 'none'}`
+}
+
+function hasAttentionPlanningAction(sourceKey){
+  return state.planningItems.some(item => item && item.source === 'manual' && item.sourceKey === sourceKey)
+}
+
+function createCompletedPlanningItemFromAttention(payload){
+  const dueDate = typeof payload.completedDate === 'string' && payload.completedDate.trim()
+    ? payload.completedDate.trim()
+    : todayIso()
+  const sourceKey = attentionPlanningSourceKey(payload.paddockId, dueDate)
+  if(hasAttentionPlanningAction(sourceKey)) return false
+
+  const comment = typeof payload.comment === 'string' && payload.comment.trim()
+    ? payload.comment.trim()
+    : payload.defaultComment
+  const detail = `${t('planning.attention.generatedPrefix')}: ${payload.alertSummary}. ${comment}`
+  const planningItem = sanitizePlanningItem({
+    id: uid(),
+    type: 'custom',
+    status: 'done',
+    dueDate,
+    repeatDate: '',
+    detail,
+    sheepId: null,
+    paddockId: payload.paddockId || null,
+    zoneId: null,
+    source: 'manual',
+    sourceKey,
+    createdAt: Date.now(),
+    completedAt: Date.now()
+  })
+
+  if(!planningItem) return false
+
+  state.planningItems.push(planningItem)
+  addEvent('PLANNING_ITEM_CREATED', {
+    planningId: planningItem.id,
+    type: planningItem.type,
+    dueDate,
+    sheepTag: null
+  })
+  addEvent('PLANNING_ITEM_COMPLETED', {
+    planningId: planningItem.id,
+    type: planningItem.type,
+    dueDate,
+    sheepTag: null
+  })
+  return true
+}
+
+function openPlanningAttentionExecutionModal(payload){
+  pendingAttentionExecution = payload
+  const paddockEl = document.getElementById('planning-attention-modal-paddock')
+  const alertsEl = document.getElementById('planning-attention-modal-alerts')
+  const dateInput = document.getElementById('planning-attention-modal-date')
+  const commentInput = document.getElementById('planning-attention-modal-comment')
+
+  if(paddockEl) paddockEl.textContent = payload.paddockLabel || '-'
+  if(alertsEl) alertsEl.textContent = payload.alertSummary || '-'
+  if(dateInput) dateInput.value = todayIso()
+  if(commentInput) commentInput.value = payload.defaultComment || ''
+
+  openModal('planning-attention-modal')
+}
+
+function closePlanningAttentionExecutionModal(){
+  pendingAttentionExecution = null
+  closeModal('planning-attention-modal')
+}
+
+function renderPlanningAttentionBlock(){
+  const items = collectPlanningWeatherAttentionItems()
+  if(!items.length) return ''
+
+  return `
+    <div class="planning-attention">
+      <h3 class="planning-attention-title">${t('planning.attention.title')}</h3>
+      <ul class="planning-attention-list">${items.map((item, index) => {
+        const alertSummary = item.alerts.map(alert => alert.text).join(' • ')
+        const adviceSummary = attentionActionSuggestionsForAlerts(item.alerts).join(' • ')
+        const defaultComment = `${t('planning.attention.defaultCommentIntro')} ${adviceSummary}`
+        const sourceKey = attentionPlanningSourceKey(item.paddockId, todayIso())
+        const alreadyChecked = hasAttentionPlanningAction(sourceKey)
+        const paddockLabel = `${item.paddockName}${item.postcode ? ` (${item.postcode})` : ''}`
+        return `<li class="planning-attention-item"><div class="planning-attention-row"><div class="planning-attention-alert"><strong>${paddockLabel}</strong>: ${alertSummary}</div><button type="button" class="planning-mark-done-button planning-attention-complete-button" data-paddock-id="${escapeHtml(item.paddockId)}" data-paddock-label="${escapeHtml(paddockLabel)}" data-alert-summary="${escapeHtml(alertSummary)}" data-default-comment="${escapeHtml(defaultComment)}" ${alreadyChecked ? 'disabled' : ''}>${alreadyChecked ? t('planning.attention.checked') : t('planning.attention.execute')}</button></div><div class="planning-attention-advice"><span>${t('planning.attention.adviceLabel')}</span> ${adviceSummary}</div></li>`
+      }).join('')}</ul>
+    </div>
+  `
+}
+
+function renderPlanningMonthGroups(entries){
   const groups = new Map()
-  filteredEntries.forEach(item => {
+  entries.forEach(item => {
     const key = planningGroupKey(item)
     if(!groups.has(key)) groups.set(key, [])
     groups.get(key).push(item)
   })
 
-  planningList.innerHTML = Array.from(groups.entries()).map(([monthKey, items]) => {
+  return Array.from(groups.entries()).map(([monthKey, items]) => {
     const monthTitle = monthKey === 'zonder-datum'
       ? '-'
       : new Date(Number(monthKey.slice(0, 4)), Number(monthKey.slice(5, 7)) - 1, 1).toLocaleDateString(localeTag(), { month: 'long', year: 'numeric' })
@@ -2526,6 +2813,23 @@ function renderPlanning(){
       </div>
     `
   }).join('')
+}
+
+function renderPlanning(){
+  const planningList = document.getElementById('planning-list')
+  if(!planningList) return
+
+  const allEntries = collectPlanningEntries()
+  syncPlanningFilterOptions(allEntries)
+  const filteredEntries = filterPlanningEntries(allEntries)
+  const attentionBlock = renderPlanningAttentionBlock()
+
+  if(!filteredEntries.length){
+    planningList.innerHTML = `${attentionBlock}<div class="empty">${t('planning.empty')}</div>`
+    return
+  }
+
+  planningList.innerHTML = `${attentionBlock}${renderPlanningMonthGroups(filteredEntries)}`
 }
 
 function initPlanningFilters(){
@@ -2755,10 +3059,6 @@ function render(){
                   <rect class="pedigree-node-box pedigree-node-box--focus" x="310" y="65" width="110" height="34" rx="8"></rect>
                   <text class="pedigree-node-text pedigree-node-text--focus" x="365" y="82" text-anchor="middle">${escapeHtml(nodeLabel(sheep))}</text>
                 </svg>
-              </div>
-              <div class="pedigree-meta">
-                <div><strong>${t('pedigree.mother')}:</strong> ${escapeHtml(motherTag)}</div>
-                <div><strong>${t('pedigree.father')}:</strong> ${escapeHtml(fatherTag)}</div>
               </div>
             </div>
           </article>
@@ -4767,6 +5067,18 @@ document.getElementById('sheep-out-list')?.addEventListener('change', e => {
 })
 
 document.getElementById('planning-list')?.addEventListener('click', e => {
+  const attentionCompleteButton = e.target.closest('.planning-attention-complete-button')
+  if(attentionCompleteButton){
+    if(attentionCompleteButton.disabled) return
+    openPlanningAttentionExecutionModal({
+      paddockId: attentionCompleteButton.dataset.paddockId || null,
+      paddockLabel: attentionCompleteButton.dataset.paddockLabel || '',
+      alertSummary: attentionCompleteButton.dataset.alertSummary || '',
+      defaultComment: attentionCompleteButton.dataset.defaultComment || ''
+    })
+    return
+  }
+
   const doneButton = e.target.closest('.planning-mark-done-button')
   if(!doneButton) return
   const planningId = doneButton.dataset.planningId
@@ -4821,6 +5133,31 @@ document.getElementById('planning-item-zone-list')?.addEventListener('change', e
 
 document.getElementById('planning-item-modal-close')?.addEventListener('click', closePlanningItemModal)
 document.getElementById('planning-item-modal-backdrop')?.addEventListener('click', closePlanningItemModal)
+document.getElementById('planning-attention-modal-close')?.addEventListener('click', closePlanningAttentionExecutionModal)
+document.getElementById('planning-attention-modal-backdrop')?.addEventListener('click', closePlanningAttentionExecutionModal)
+document.getElementById('planning-attention-modal-cancel')?.addEventListener('click', closePlanningAttentionExecutionModal)
+
+document.getElementById('planning-attention-modal-form')?.addEventListener('submit', e => {
+  e.preventDefault()
+  if(!pendingAttentionExecution) return
+  const completedDateInput = document.getElementById('planning-attention-modal-date')
+  const commentInput = document.getElementById('planning-attention-modal-comment')
+  const completedDate = completedDateInput ? completedDateInput.value.trim() : ''
+  if(!completedDate) return
+
+  const created = createCompletedPlanningItemFromAttention({
+    paddockId: pendingAttentionExecution.paddockId,
+    alertSummary: pendingAttentionExecution.alertSummary,
+    defaultComment: pendingAttentionExecution.defaultComment,
+    comment: commentInput ? commentInput.value : '',
+    completedDate
+  })
+  if(created){
+    save(); render(); closePlanningAttentionExecutionModal()
+    return
+  }
+  alert(t('planning.attention.alreadyDone'))
+})
 
 document.getElementById('planning-item-form')?.addEventListener('submit', e => {
   e.preventDefault()

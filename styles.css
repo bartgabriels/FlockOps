@@ -522,6 +522,59 @@ button.add-zone-button:hover {
   color:var(--text-secondary);
 }
 
+.weather-alerts{
+  grid-column:1 / -1;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:6px;
+}
+
+.weather-alerts strong{
+  font-size:0.72rem;
+  color:var(--text-secondary);
+}
+
+.weather-alert{
+  display:inline-flex;
+  align-items:center;
+  border-radius:999px;
+  padding:2px 8px;
+  font-size:0.68rem;
+  font-weight:700;
+  line-height:1.35;
+}
+
+.weather-alert--storm{
+  color:#5a1f00;
+  background:#ffe1d1;
+  border:1px solid #f1b08c;
+}
+
+.weather-alert--rain{
+  color:#0b3f78;
+  background:#dcecff;
+  border:1px solid #a9c9ef;
+}
+
+.weather-alert--frost{
+  color:#1d3f5f;
+  background:#e6f5ff;
+  border:1px solid #b4d7ea;
+}
+
+.weather-alert--heat{
+  color:#733700;
+  background:#ffe7cf;
+  border:1px solid #f5c090;
+}
+
+.weather-alert--wind{
+  color:#21344f;
+  background:#dde4f4;
+  border:1px solid #b7c4df;
+}
+
 .paddock-weather-empty,
 .paddock-weather-loading,
 .paddock-weather-error{
@@ -1593,6 +1646,62 @@ form button{
   gap:10px;
 }
 
+.planning-attention{
+  border:1px solid #f2d7b0;
+  border-radius:10px;
+  background:#fff7ea;
+  padding:10px;
+}
+
+.planning-attention-title{
+  margin:0 0 6px;
+  font-size:0.95rem;
+  color:#7a4b12;
+}
+
+.planning-attention-list{
+  margin:0;
+  padding-left:18px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  color:#5b3f20;
+  font-size:0.85rem;
+}
+
+.planning-attention-item{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.planning-attention-row{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.planning-attention-alert{
+  margin-bottom:2px;
+  flex:1;
+}
+
+.planning-attention-advice span{
+  font-weight:700;
+  color:#6f4d28;
+}
+
+.planning-attention-complete-button{
+  margin-left:auto;
+  flex-shrink:0;
+}
+
+.planning-attention-complete-button:disabled{
+  opacity:0.7;
+  cursor:default;
+}
+
 .planning-filters{
   display:grid;
   grid-template-columns:repeat(3, minmax(0, 1fr));
@@ -1672,6 +1781,8 @@ form button{
 }
 
 .planning-mark-done-button{
+  width:auto;
+  max-width:none;
   background:#E6F3EB;
   color:#1F6E4C;
   border:1px solid #BBDDCB;
