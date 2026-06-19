@@ -872,6 +872,12 @@ button.add-zone-button:hover {
   gap:2px;
 }
 
+.zone-sheep-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:2px;
+}
+
 .zone-sheep-list.is-scrollable{
   max-height:8em;
   overflow-y:auto;

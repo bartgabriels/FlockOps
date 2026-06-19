@@ -918,7 +918,6 @@ function applyStaticTranslations(){
   setText('planning-item-select-all-paddocks-btn', t('planning.add.selectAllPaddocks'))
   setText('planning-item-select-all-zones-btn', t('planning.add.selectAllZones'))
   setText('planning-item-date-label', t('planning.add.date'))
-  setText('planning-item-repeat-date-label', t('planning.add.repeatDate'))
   setText('planning-item-detail-label', t('planning.add.detail'))
   setPlaceholder('planning-item-detail', t('planning.add.detailPlaceholder'))
   setPlaceholder('auth-email', t('auth.emailPlaceholder'))
@@ -2256,6 +2255,27 @@ function renderPlanningDetails(item){
 function markPlanningItemDone(planningId){
   const item = state.planningItems.find(entry => entry.id === planningId)
   if(!item || item.status !== 'planned') return
+
+  // For shearing planning, use the same sheep shearing modal flow as sheep cards.
+  if(item.type === 'shearing' && item.sheepId){
+    const sheep = state.sheep.find(entry => entry.id === item.sheepId)
+    if(sheep){
+      pendingPlanningItemId = planningId
+      openSheepShearingModal(item.sheepId)
+      return
+    }
+  }
+
+  // For injection planning, use the same sheep injection modal flow as sheep cards.
+  if(item.type === 'injection' && item.sheepId){
+    const sheep = state.sheep.find(entry => entry.id === item.sheepId)
+    if(sheep){
+      pendingPlanningItemId = planningId
+      openSheepInjectionModal(item.sheepId)
+      return
+    }
+  }
+
   item.status = 'done'
   item.completedAt = Date.now()
   addEvent('PLANNING_ITEM_COMPLETED', {
@@ -2269,7 +2289,6 @@ function markPlanningItemDone(planningId){
 
 function openPlanningItemModal(){
   const dueDateInput = document.getElementById('planning-item-date')
-  const repeatDateInput = document.getElementById('planning-item-repeat-date')
   const typeInput = document.getElementById('planning-item-type')
   const detailInput = document.getElementById('planning-item-detail')
   const sheepList = document.getElementById('planning-item-sheep-list')
@@ -2277,7 +2296,6 @@ function openPlanningItemModal(){
 
   if(typeInput) typeInput.value = 'custom'
   if(dueDateInput) dueDateInput.value = todayIso()
-  if(repeatDateInput) repeatDateInput.value = ''
   if(detailInput) detailInput.value = ''
   if(sheepList){
     sheepList.innerHTML = state.sheep
@@ -2876,7 +2894,7 @@ function renderPaddock(p){
         const zonePerimeter = z.perimeter !== null ? `${z.perimeter} m` : ''
         const bulkMoveButton = sheepCount > 1 ? `<button type="button" class="zone-bulk-move-button" data-paddock-id="${p.id}" data-zone-id="${z.id}" aria-label="${t('zone.bulkMove')}" title="${t('zone.bulkMove')}">${doubleArrowIcon()}</button>` : ''
         const sheepList = sheepCount
-          ? `<div class="zone-sheep-list${sheepCount > 4 ? ' is-scrollable' : ''}">${sheepInZone.map(s => `<button type="button" class="zone-sheep-link" data-sheep-id="${s.id}" aria-label="${t('aria.moveSheep', { tag: s.tag })}">${sheepIcon()}${s.tag}</button>`).join('')}</div>${bulkMoveButton}`
+          ? `<div class="zone-sheep-list zone-sheep-grid${sheepCount > 4 ? ' is-scrollable' : ''}">${sheepInZone.map(s => `<button type="button" class="zone-sheep-link" data-sheep-id="${s.id}" aria-label="${t('aria.moveSheep', { tag: s.tag })}">${sheepIcon()}${s.tag}</button>`).join('')}</div>${bulkMoveButton}`
           : ''
         const headerZoneStatus = `<div class="${zoneStatusClass}">${zoneStatus}</div>`
         const stallZone = isStalZone(p, z)
@@ -3665,6 +3683,7 @@ function openSheepInjectionModal(sheepId){
 
 function closeSheepInjectionModal(){
   pendingInjectionSheepId = null
+  pendingPlanningItemId = null
   closeModal('sheep-injection-modal')
 }
 
@@ -3684,6 +3703,7 @@ function openSheepShearingModal(sheepId){
 
 function closeSheepShearingModal(){
   pendingShearingSheepId = null
+  pendingPlanningItemId = null
   closeModal('sheep-shearing-modal')
 }
 
@@ -4167,6 +4187,21 @@ document.getElementById('sheep-injection-form')?.addEventListener('submit', e =>
     repeatDate: noRepeat ? null : repeatDate
   })
 
+  if(pendingPlanningItemId){
+    const planningItem = state.planningItems.find(entry => entry.id === pendingPlanningItemId)
+    if(planningItem && planningItem.status === 'planned'){
+      planningItem.status = 'done'
+      planningItem.completedAt = Date.now()
+      addEvent('PLANNING_ITEM_COMPLETED', {
+        planningId: planningItem.id,
+        type: planningItem.type,
+        dueDate: planningItem.dueDate,
+        sheepTag: sheep.tag || null
+      })
+    }
+    pendingPlanningItemId = null
+  }
+
   if(noRepeat){
   } else {
   }
@@ -4195,6 +4230,21 @@ document.getElementById('sheep-shearing-form')?.addEventListener('submit', e => 
     sheepTag: sheep.tag,
     date: shearingDate
   })
+
+  if(pendingPlanningItemId){
+    const planningItem = state.planningItems.find(entry => entry.id === pendingPlanningItemId)
+    if(planningItem && planningItem.status === 'planned'){
+      planningItem.status = 'done'
+      planningItem.completedAt = Date.now()
+      addEvent('PLANNING_ITEM_COMPLETED', {
+        planningId: planningItem.id,
+        type: planningItem.type,
+        dueDate: planningItem.dueDate,
+        sheepTag: sheep.tag || null
+      })
+    }
+    pendingPlanningItemId = null
+  }
 
   save(); render(); closeSheepShearingModal()
 })
@@ -4743,14 +4793,12 @@ document.getElementById('planning-item-form')?.addEventListener('submit', e => {
   e.preventDefault()
   const typeInput = document.getElementById('planning-item-type')
   const dueDateInput = document.getElementById('planning-item-date')
-  const repeatDateInput = document.getElementById('planning-item-repeat-date')
   const detailInput = document.getElementById('planning-item-detail')
 
   const type = normalizePlanningType(typeInput ? typeInput.value : 'custom')
   const selectedPaddockIds = getSelectedPlanningPaddockIds()
   const selectedSheepIds = Array.from(document.querySelectorAll('#planning-item-sheep-list input[name="planning-item-sheep"]:checked')).map(input => input.value)
   const dueDate = dueDateInput ? dueDateInput.value.trim() : ''
-  const repeatDate = repeatDateInput ? repeatDateInput.value.trim() : ''
   const detail = detailInput ? detailInput.value.trim() : ''
 
   if(!dueDate) return
@@ -4773,7 +4821,7 @@ document.getElementById('planning-item-form')?.addEventListener('submit', e => {
         type,
         status: 'planned',
         dueDate,
-        repeatDate,
+        repeatDate: '',
         detail,
         sheepId,
         paddockId,
