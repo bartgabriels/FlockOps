@@ -3055,30 +3055,38 @@ function render(){
             </div>
             <div class="pedigree-tree-zone${isExpanded ? '' : ' hidden'}">
               <div class="pedigree-tree-wrap">
-                <svg class="pedigree-tree-svg" viewBox="0 0 420 170" role="img" aria-label="${escapeHtml(tag)} ${t('section.pedigree')}">
-                  <line class="pedigree-line" x1="55" y1="20" x2="55" y2="55"></line>
-                  <line class="pedigree-line" x1="55" y1="37.5" x2="225" y2="42"></line>
-                  <line class="pedigree-line" x1="55" y1="100" x2="55" y2="135"></line>
-                  <line class="pedigree-line" x1="55" y1="117.5" x2="225" y2="122"></line>
-                  <line class="pedigree-line" x1="225" y1="42" x2="225" y2="122"></line>
-                  <line class="pedigree-line" x1="225" y1="82" x2="365" y2="82"></line>
+                <svg class="pedigree-tree-svg" viewBox="0 0 500 190" role="img" aria-label="${escapeHtml(tag)} ${t('section.pedigree')}">
+                  <line class="pedigree-line" x1="255" y1="50" x2="170" y2="50"></line>
+                  <line class="pedigree-line" x1="255" y1="140" x2="170" y2="140"></line>
+                  <line class="pedigree-line" x1="170" y1="50" x2="170" y2="140"></line>
+                  <line class="pedigree-line" x1="170" y1="95" x2="150" y2="95"></line>
 
-                  <rect class="pedigree-node-box" x="10" y="6" width="90" height="28" rx="8"></rect>
-                  <text class="pedigree-node-text" x="55" y="20" text-anchor="middle">${escapeHtml(nodeLabel(maternalGrandMother))}</text>
-                  <rect class="pedigree-node-box" x="10" y="41" width="90" height="28" rx="8"></rect>
-                  <text class="pedigree-node-text" x="55" y="55" text-anchor="middle">${escapeHtml(nodeLabel(maternalGrandFather))}</text>
-                  <rect class="pedigree-node-box" x="10" y="86" width="90" height="28" rx="8"></rect>
-                  <text class="pedigree-node-text" x="55" y="100" text-anchor="middle">${escapeHtml(nodeLabel(paternalGrandMother))}</text>
-                  <rect class="pedigree-node-box" x="10" y="121" width="90" height="28" rx="8"></rect>
-                  <text class="pedigree-node-text" x="55" y="135" text-anchor="middle">${escapeHtml(nodeLabel(paternalGrandFather))}</text>
+                  <line class="pedigree-line" x1="420" y1="25" x2="340" y2="25"></line>
+                  <line class="pedigree-line" x1="420" y1="69" x2="340" y2="69"></line>
+                  <line class="pedigree-line" x1="340" y1="25" x2="340" y2="69"></line>
+                  <line class="pedigree-line" x1="340" y1="47" x2="320" y2="50"></line>
 
-                  <rect class="pedigree-node-box" x="170" y="25" width="110" height="34" rx="8"></rect>
-                  <text class="pedigree-node-text" x="225" y="42" text-anchor="middle">${escapeHtml(nodeLabel(mother))}</text>
-                  <rect class="pedigree-node-box" x="170" y="105" width="110" height="34" rx="8"></rect>
-                  <text class="pedigree-node-text" x="225" y="122" text-anchor="middle">${escapeHtml(nodeLabel(father))}</text>
+                  <line class="pedigree-line" x1="420" y1="115" x2="340" y2="115"></line>
+                  <line class="pedigree-line" x1="420" y1="159" x2="340" y2="159"></line>
+                  <line class="pedigree-line" x1="340" y1="115" x2="340" y2="159"></line>
+                  <line class="pedigree-line" x1="340" y1="137" x2="320" y2="140"></line>
 
-                  <rect class="pedigree-node-box pedigree-node-box--focus" x="310" y="65" width="110" height="34" rx="8"></rect>
-                  <text class="pedigree-node-text pedigree-node-text--focus" x="365" y="82" text-anchor="middle">${escapeHtml(nodeLabel(sheep))}</text>
+                  <rect class="pedigree-node-box pedigree-node-box--focus" x="20" y="75" width="130" height="40" rx="8"></rect>
+                  <text class="pedigree-node-text pedigree-node-text--focus" x="85" y="95" text-anchor="middle">${escapeHtml(nodeLabel(sheep))}</text>
+
+                  <rect class="pedigree-node-box" x="190" y="30" width="130" height="40" rx="8"></rect>
+                  <text class="pedigree-node-text" x="255" y="50" text-anchor="middle">${escapeHtml(nodeLabel(mother))}</text>
+                  <rect class="pedigree-node-box" x="190" y="120" width="130" height="40" rx="8"></rect>
+                  <text class="pedigree-node-text" x="255" y="140" text-anchor="middle">${escapeHtml(nodeLabel(father))}</text>
+
+                  <rect class="pedigree-node-box" x="360" y="8" width="120" height="34" rx="8"></rect>
+                  <text class="pedigree-node-text" x="420" y="25" text-anchor="middle">${escapeHtml(nodeLabel(maternalGrandMother))}</text>
+                  <rect class="pedigree-node-box" x="360" y="52" width="120" height="34" rx="8"></rect>
+                  <text class="pedigree-node-text" x="420" y="69" text-anchor="middle">${escapeHtml(nodeLabel(maternalGrandFather))}</text>
+                  <rect class="pedigree-node-box" x="360" y="98" width="120" height="34" rx="8"></rect>
+                  <text class="pedigree-node-text" x="420" y="115" text-anchor="middle">${escapeHtml(nodeLabel(paternalGrandMother))}</text>
+                  <rect class="pedigree-node-box" x="360" y="142" width="120" height="34" rx="8"></rect>
+                  <text class="pedigree-node-text" x="420" y="159" text-anchor="middle">${escapeHtml(nodeLabel(paternalGrandFather))}</text>
                 </svg>
               </div>
             </div>

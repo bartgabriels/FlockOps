@@ -1164,7 +1164,7 @@ form button{
 .pedigree-tree-svg{
   width:100%;
   min-width:0;
-  height:170px;
+  height:190px;
   display:block;
 }
 
@@ -1196,7 +1196,7 @@ form button{
 
 .pedigree-node-text{
   fill:var(--text);
-  font-size:13px;
+  font-size:14px;
   font-weight:600;
   dominant-baseline:middle;
 }
